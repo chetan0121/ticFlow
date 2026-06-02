@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import NextButton from '../../components/ui/Buttons/NextButton'
 import ConfigHeader from '../../components/game/configs/ConfigHeader'
 import GameSetupPanel from '../../components/game/configs/GameSetupPanel'
+import { useWindowEnterKey } from '../../hooks/useWindowEnterKey'
 import AppRoutes from '../../router/AppRoutes'
 
 const TEXT = {
@@ -17,8 +18,10 @@ function GameMenu() {
     void nav(AppRoutes.gameBoard.path)
   }
 
+  useWindowEnterKey(startGame)
+
   return (
-    <div className="flex h-full w-full max-w-6xl flex-col gap-10 py-10 pb-200 md:pb-0">
+    <div className="flex h-full w-full max-w-6xl flex-col gap-10 py-10">
       <ConfigHeader title={TEXT.title} />
 
       <GameSetupPanel maxWidth="100%" />

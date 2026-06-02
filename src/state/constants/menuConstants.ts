@@ -1,10 +1,14 @@
 // Shared option types and game setup constants
 
+import { Bot, Globe2, Handshake } from 'lucide-react'
+import React, { type ReactElement } from 'react'
+
 // Base value types for selectable options
 export type OptionValue = string | number | null
 
 // Core option shape shared by dropdowns and config lists
 export interface OptionItem<T extends OptionValue = OptionValue> {
+  readonly logo: ReactElement | null
   readonly value: T
   readonly label: string
   readonly description: string
@@ -36,19 +40,22 @@ type ConfigList = readonly GameConfigOption[]
 
 export const GAME_MODES: ConfigList = [
   {
+    logo: React.createElement(Handshake),
     value: 'friend',
     label: 'Friend',
-    description: 'Play on the same device with a friend',
+    description: 'Play with friends',
   },
   {
+    logo: React.createElement(Bot),
     value: 'bot',
     label: 'Bot',
     description: 'Challenge an AI opponent',
   },
   {
+    logo: React.createElement(Globe2),
     value: 'online',
     label: 'Online',
-    description: 'Match with players over the network',
+    description: 'Match with random players',
   },
 ]
 

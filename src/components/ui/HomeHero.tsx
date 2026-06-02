@@ -4,8 +4,7 @@ import AppRoutes from '../../router/AppRoutes'
 
 function HomeHero() {
   // Text of the Component
-  const HEADING = 'Tic Tac Toe'
-  const HEADING2 = '2.0'
+  const HEADING = 'TicFlow'
   const DESCRIPTION =
     'The classic game reimagined. Experience strategic depth, and visually stunning gameplay.'
   const START_BTN = 'START'
@@ -21,8 +20,8 @@ function HomeHero() {
       {/* Head */}
       <div className="flex max-w-100 flex-col items-center justify-center gap-1">
         {/* Title */}
-        <h1 className="font-['Oswald'] text-5xl font-semibold tracking-tight md:text-6xl">
-          {HEADING} {HEADING2}
+        <h1 className="font-['Oswald'] text-5xl font-semibold tracking-wider md:text-6xl">
+          {HEADING}
         </h1>
 
         {/* Description */}

@@ -26,9 +26,7 @@ function OptionDropdown({ selection, text }: DropDownOptions) {
     [currentOption, options]
   )
 
-  if (!selectedOption) {
-    return null
-  }
+  if (!selectedOption) return null
 
   const close = () => setIsOpen(false)
   const toggle = () => setIsOpen(open => !open)
@@ -56,10 +54,17 @@ function OptionDropdown({ selection, text }: DropDownOptions) {
           onClick={toggle}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
-          className="flex w-full items-center justify-between gap-4 rounded-2xl border border-[hsl(38,95%,54%)]/35 bg-linear-to-b from-[#FFE8B2]/34 to-[#FFC878]/22 px-4 py-3.5 text-left font-['Montserrat'] text-base text-white shadow-[0_8px_24px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-[hsl(38,95%,54%)]/65 hover:from-[#FFD68A]/[0.28] hover:to-[#FFB05C]/16 hover:shadow-[0_12px_32px_hsl(38,95%,54%)/25] focus-visible:ring-2 focus-visible:ring-[hsl(38,95%,54%)]/35 focus-visible:outline-none"
+          className="flex w-full items-center justify-between gap-4 rounded-2xl border border-[hsl(38,95%,54%)]/35 bg-linear-to-b from-[#FFE8B2]/35 to-[#FFC878]/35 px-4 py-3.5 text-left font-['Montserrat'] text-base text-white shadow-[0_8px_24px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-[hsl(38,95%,54%)]/65 hover:from-[#FFD68A]/[0.28] hover:to-[#FFB05C]/16 hover:shadow-[0_12px_32px_hsl(38,95%,54%)/25] focus-visible:ring-2 focus-visible:ring-[hsl(38,95%,54%)]/35 focus-visible:outline-none"
         >
           <span className="flex min-w-0 flex-col">
-            <span className="truncate font-medium text-white">{selectedOption.label}</span>
+            <span className="flex items-center gap-2 truncate font-medium text-white">
+              {selectedOption.logo ? (
+                <span className="inline-flex h-5 w-5 items-center justify-center text-[hsl(38,95%,72%)] [&>svg]:h-5 [&>svg]:w-5">
+                  {selectedOption.logo}
+                </span>
+              ) : null}
+              <span className="truncate">{selectedOption.label}</span>
+            </span>
             {hasText(selectedOption.description) ? (
               <span className="truncate text-sm text-white/55">
                 {selectedOption.description}
@@ -116,8 +121,13 @@ function OptionDropdown({ selection, text }: DropDownOptions) {
                               }`}
                             >
                               <span className="min-w-0">
-                                <span className="block truncate font-['Montserrat'] text-base text-white">
-                                  {option.label}
+                                <span className="flex items-center gap-2 truncate font-['Montserrat'] text-base text-white">
+                                  {option.logo ? (
+                                    <span className="inline-flex h-5 w-5 items-center justify-center text-[hsl(38,95%,72%)] [&>svg]:h-5 [&>svg]:w-5">
+                                      {option.logo}
+                                    </span>
+                                  ) : null}
+                                  <span className="truncate">{option.label}</span>
                                 </span>
                                 {hasText(option.description) ? (
                                   <span className="block truncate text-sm text-white/52">

@@ -7,9 +7,11 @@ const ErrorDesc =
 
 const NotFoundPage: FC = () => {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-black/30 p-10">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-10">
       <h1 className="text-center text-lg font-bold text-balance md:text-2xl">{ErrorMsg}</h1>
-      <h2 className="text-md max-w-200 text-center text-balance md:text-xl">{ErrorDesc}</h2>
+      <h2 className="text-md max-w-100 text-center text-balance md:max-w-200 md:text-xl">
+        {ErrorDesc}
+      </h2>
       <div className="mt-10">
         <GotoHome />
       </div>
