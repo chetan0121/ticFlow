@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import type { GameMode, GameTimeControl, GameMoveLimit } from '../../constants/menuConstants'
+import type { GameMode, GameMoveLimit, GameTimeControl } from '../../constants/menuConstants'
 
 export interface GameConfigState {
   selectedMode: GameMode

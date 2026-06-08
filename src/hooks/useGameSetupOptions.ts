@@ -20,7 +20,7 @@ const GAME_SETUP_TEXT = {
   },
   moveCap: {
     label: 'Move Cap',
-    helper: 'The Total move limit before a draw',
+    helper: 'The total move limit before a draw',
   },
 }
 

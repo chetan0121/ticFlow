@@ -4,21 +4,21 @@ import { Bot, Globe2, Handshake } from 'lucide-react'
 import React, { type ReactElement } from 'react'
 
 // Base value types for selectable options
-export type OptionValue = string | number | null
+export type OptionValue = 'friend' | 'bot' | 'online'
 
 // Core option shape shared by dropdowns and config lists
-export interface OptionItem<T extends OptionValue = OptionValue> {
+export interface OptionItem {
   readonly logo: ReactElement | null
-  readonly value: T
+  readonly value: OptionValue
   readonly label: string
   readonly description: string
 }
 
 // Selection contract for option pickers
-export interface OptionSelection<T extends OptionValue = OptionValue> {
-  options: readonly OptionItem<T>[]
-  currentOption: T
-  selectOption: (value: T) => void
+export interface OptionSelection {
+  options: readonly OptionItem[]
+  currentOption: OptionValue
+  selectOption: (value: OptionValue) => void
 }
 
 // Null will be used as infinite
@@ -32,13 +32,10 @@ export interface RangeConfig {
   value: specialType
 }
 
-// Game setup options reuse the shared option shape
-export type GameConfigOption<T extends OptionValue = OptionValue> = OptionItem<T>
-
 // A simple helper type to handle the "readonly array" part once
-type ConfigList = readonly GameConfigOption[]
+type ModeList = OptionItem[]
 
-export const GAME_MODES: ConfigList = [
+export const GAME_MODES: ModeList = [
   {
     logo: React.createElement(Handshake),
     value: 'friend',
@@ -75,7 +72,7 @@ export const GAME_MOVE_LIMITS: RangeConfig = {
 
 /** Derived Types from Configuration */
 
-export type GameMode = (typeof GAME_MODES)[number]['value']
+export type GameMode = OptionValue
 
 export type GameTimeControl = specialType
 
