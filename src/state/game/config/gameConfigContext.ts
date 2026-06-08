@@ -1,19 +1,24 @@
 import { createContext } from 'react'
-import type { GameMode, GameMoveLimit, GameTimeControl } from '../../constants/menuConstants'
+import { GAME_MODES, GAME_MOVE_LIMITS, GAME_TIME_CONTROLS } from '../../constants/menuConstants'
 
-export interface GameConfigState {
-  selectedMode: GameMode
-  timeControl: GameTimeControl
-  moveLimit: GameMoveLimit
+// Default config values. Add new config state here and the provider will expose state + setX action.
+export const INITIAL_STATE = {
+  selectedMode: GAME_MODES[0].value,
+  timeControl: GAME_TIME_CONTROLS.value,
+  moveLimit: GAME_MOVE_LIMITS.value,
+}
+
+export type GameConfigState = typeof INITIAL_STATE
+
+type SetterName<Key extends string> = `set${Capitalize<Key>}`
+
+export type GameConfigActions = {
+  [Key in keyof GameConfigState as SetterName<string & Key>]: (value: GameConfigState[Key]) => void
 }
 
 export interface GameConfigContextValue {
   state: GameConfigState
-  actions: {
-    setSelectedMode: (mode: GameMode) => void
-    setTimeControl: (value: GameTimeControl) => void
-    setMoveLimit: (value: GameMoveLimit) => void
-  }
+  actions: GameConfigActions
 }
 
 export const GameConfigContext = createContext<GameConfigContextValue | undefined>(undefined)

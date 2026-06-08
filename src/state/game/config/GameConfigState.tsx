@@ -1,33 +1,38 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
 import {
-  GAME_MODES,
-  GAME_MOVE_LIMITS,
-  GAME_TIME_CONTROLS,
-  type GameMode,
-  type GameMoveLimit,
-  type GameTimeControl,
-} from '../../constants/menuConstants'
-import { GameConfigContext, type GameConfigState } from './gameConfigContext'
+  GameConfigContext,
+  INITIAL_STATE,
+  type GameConfigActions,
+  type GameConfigState,
+} from './gameConfigContext'
 
-// Default config values.
-const INITIAL_STATE: GameConfigState = {
-  selectedMode: GAME_MODES[0].value,
-  timeControl: GAME_TIME_CONTROLS.value,
-  moveLimit: GAME_MOVE_LIMITS.value,
+function toSetterName(key: string): keyof GameConfigActions {
+  return `set${key.charAt(0).toUpperCase()}${key.slice(1)}` as keyof GameConfigActions
+}
+
+function createActions(setState: Dispatch<SetStateAction<GameConfigState>>): GameConfigActions {
+  return (Object.keys(INITIAL_STATE) as (keyof GameConfigState)[]).reduce((actions, key) => {
+    return {
+      ...actions,
+      [toSetterName(key)]: (value: GameConfigState[typeof key]) => {
+        setState((current) => ({ ...current, [key]: value }))
+      },
+    }
+  }, {} as GameConfigActions)
 }
 
 // Stores config state and exposes setters.
 export function GameConfigProvider({ children }: { children: ReactNode }) {
-  const [selectedMode, setSelectedMode] = useState<GameMode>(INITIAL_STATE.selectedMode)
-  const [timeControl, setTimeControl] = useState<GameTimeControl>(INITIAL_STATE.timeControl)
-  const [moveLimit, setMoveLimit] = useState<GameMoveLimit>(INITIAL_STATE.moveLimit)
+  const [state, setState] = useState<GameConfigState>(INITIAL_STATE)
+
+  const actions = useMemo(() => createActions(setState), [])
 
   const value = useMemo(
     () => ({
-      state: { selectedMode, timeControl, moveLimit },
-      actions: { setSelectedMode, setTimeControl, setMoveLimit },
+      state,
+      actions,
     }),
-    [selectedMode, timeControl, moveLimit]
+    [actions, state]
   )
 
   return <GameConfigContext.Provider value={value}>{children}</GameConfigContext.Provider>
