@@ -1,12 +1,18 @@
-// Shared option types and game setup constants
-
 import { Bot, Globe2, Handshake } from 'lucide-react'
 import React, { type ReactElement } from 'react'
 
-// Base value types for selectable options
+// Main modes
 export type OptionValue = 'friend' | 'bot' | 'online'
 
-// Core option shape shared by dropdowns and config lists
+// Sub modes
+export type FriendSubMode = 'flocal' | 'fOnline'
+export type BotSubMode = 'easy' | 'medium' | 'hard'
+export type OnlineSubMode = 'matchmaking'
+
+// Union of Sub modes
+export type UnionSubModes = FriendSubMode | BotSubMode | OnlineSubMode
+
+// Core option structure for dropdowns
 export interface OptionItem {
   readonly logo: ReactElement | null
   readonly value: OptionValue
@@ -14,14 +20,17 @@ export interface OptionItem {
   readonly description: string
 }
 
+// For Dropdown options
+type ModeList = readonly OptionItem[]
+
 // Selection contract for option pickers
 export interface OptionSelection {
-  options: readonly OptionItem[]
+  options: ModeList
   currentOption: OptionValue
   selectOption: (value: OptionValue) => void
 }
 
-// Null will be used as infinite
+// For range options
 type specialType = number | null
 
 // Range contract for numeric spinner controls
@@ -32,8 +41,29 @@ export interface RangeConfig {
   value: specialType
 }
 
-// A simple helper type to handle the "readonly array" part once
-type ModeList = OptionItem[]
+export interface SetupText {
+  label: string
+  helper: string
+  modalTitle?: string
+  listboxLabel?: string
+}
+
+export const GAME_SETUP_TEXT: Record<string, SetupText> = {
+  mode: {
+    label: 'Play With',
+    helper: 'Choose who you want to play against',
+    modalTitle: 'Select Mode',
+    listboxLabel: 'Play with',
+  },
+  turnTimer: {
+    label: 'Player Timer',
+    helper: 'The time each player gets (in minutes)',
+  },
+  moveCap: {
+    label: 'Move Cap',
+    helper: 'The total move limit before a draw',
+  },
+}
 
 export const GAME_MODES: ModeList = [
   {

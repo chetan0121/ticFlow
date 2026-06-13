@@ -1,35 +1,13 @@
 import {
   GAME_MODES,
   GAME_MOVE_LIMITS,
+  GAME_SETUP_TEXT,
   GAME_TIME_CONTROLS,
   type OptionSelection,
   type RangeConfig,
+  type SetupText,
 } from '../state/constants/menuConstants'
 import { useGameConfigState } from '../state/game/config/useGameConfigState'
-
-const GAME_SETUP_TEXT = {
-  mode: {
-    label: 'Play With',
-    helper: 'Choose who you want to play against',
-    modalTitle: 'Select Mode',
-    listboxLabel: 'Play with',
-  },
-  turnTimer: {
-    label: 'Player Timer',
-    helper: 'The time each player gets (in minutes)',
-  },
-  moveCap: {
-    label: 'Move Cap',
-    helper: 'The total move limit before a draw',
-  },
-}
-
-export type SetupText = {
-  label: string
-  helper: string
-  modalTitle?: string
-  listboxLabel?: string
-}
 
 export interface DropDownOptions {
   key: string

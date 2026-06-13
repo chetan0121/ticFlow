@@ -251,14 +251,14 @@ function OptionDropdown({ selection, text }: DropDownOptions) {
         >
           <div className="border-b border-white/[0.07] px-3 py-2.5">
             <p className="font-['Montserrat'] text-[10px] font-semibold tracking-[0.28em] text-amber-100/55 uppercase">
-              {DEFAULT_TEXT.modalTitle}
+              {text.modalTitle ?? DEFAULT_TEXT.modalTitle}
             </p>
           </div>
 
           <div
             id={listboxId}
             role="listbox"
-            aria-label={DEFAULT_TEXT.listboxLabel}
+            aria-label={text.listboxLabel ?? DEFAULT_TEXT.listboxLabel}
             aria-labelledby={buttonId}
             className="max-h-64 space-y-1 overflow-y-auto p-2"
           >

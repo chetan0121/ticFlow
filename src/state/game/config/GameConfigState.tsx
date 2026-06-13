@@ -15,13 +15,13 @@ function createActions(setState: Dispatch<SetStateAction<GameConfigState>>): Gam
     return {
       ...actions,
       [toSetterName(key)]: (value: GameConfigState[typeof key]) => {
-        setState((current) => ({ ...current, [key]: value }))
+        setState(current => ({ ...current, [key]: value }))
       },
     }
   }, {} as GameConfigActions)
 }
 
-// Stores config state and exposes setters.
+// Stores config state and exposes setters
 export function GameConfigProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<GameConfigState>(INITIAL_STATE)
 
