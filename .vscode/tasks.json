@@ -2,18 +2,129 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run Dev Server",
+      "label": "Run dev",
       "type": "shell",
-      "command": "cmd",
-      "args": [
-        "/k",
-        "bun run dev" // You can change 'bun' to whatever you use (e.g. npm)
-      ],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
+      "command": "bun",
+      "args": ["run", "dev"],
+      "group": "build",
       "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "Run format",
+      "type": "shell",
+      "command": "bun",
+      "args": ["run", "format"],
+      "group": "build",
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "Run lint",
+      "type": "shell",
+      "command": "bun",
+      "args": ["run", "lint"],
+      "group": "build",
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "Run ts-check",
+      "type": "shell",
+      "command": "bun",
+      "args": ["run", "ts-check"],
+      "group": "build",
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "Run build",
+      "type": "shell",
+      "command": "bun",
+      "args": ["run", "build"],
+      "group": "build",
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "Run release",
+      "type": "shell",
+      "command": "bun",
+      "args": ["run", "release"],
+      "group": "build",
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "Run preview",
+      "type": "shell",
+      "command": "bun",
+      "args": ["run", "preview"],
+      "group": "build",
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1
+      },
       "presentation": {
         "echo": false,
         "reveal": "always",
