@@ -1,6 +1,6 @@
 interface NextButtonProps {
   text: string
-  onClick?: () => void
+  onClick: () => void
 }
 
 function NextButton({ text, onClick }: NextButtonProps) {

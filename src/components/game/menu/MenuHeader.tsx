@@ -1,11 +1,11 @@
-interface ConfigHeaderProps {
+interface MenuHeaderProps {
   eyebrow?: string
   title: string
   subtitle?: string
   modeLabel?: string
 }
 
-function ConfigHeader({ eyebrow, title, subtitle, modeLabel }: ConfigHeaderProps) {
+function MenuHeader({ eyebrow, title, subtitle, modeLabel }: MenuHeaderProps) {
   return (
     <div className="flex flex-col items-start gap-3 text-left">
       {eyebrow ? (
@@ -30,4 +30,4 @@ function ConfigHeader({ eyebrow, title, subtitle, modeLabel }: ConfigHeaderProps
   )
 }
 
-export default ConfigHeader
+export default MenuHeader

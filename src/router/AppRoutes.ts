@@ -22,7 +22,7 @@ const AppRoutes = {
     page: LoadingScreen,
   },
   gameMenu: {
-    path: '/gamemanu',
+    path: '/gamemenu',
     page: GameMenu,
   },
   notFound: {

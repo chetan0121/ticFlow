@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FocusEvent, KeyboardEvent } from 'react'
 import type { RangeOptions } from '../../../hooks/useGameSetupOptions'
 import { Minus, Plus } from 'lucide-react'
@@ -23,9 +23,9 @@ const parseInt = (value: string): number | null => {
   return rounded
 }
 
-function OptionSpinner({ range, text }: RangeOptions) {
+function RangeStepper({ range, text }: RangeOptions) {
   const { min, max, value, step, setValue } = range
-  const safeStep = useMemo(() => (step > 0 ? step : 1), [step])
+  const safeStep = step < 0 ? 1 : step
   const [inputValue, setInputValue] = useState<inputType>(value)
 
   // Auto Sync inpuValue to actual state 'value'
@@ -72,7 +72,7 @@ function OptionSpinner({ range, text }: RangeOptions) {
     setInputValue(refineInput(finalVal))
   }
 
-  // Triggers when out of focus from an elem
+  // Trigger when out of focus from an elem
   const handleBlur = () => {
     if (typeof inputValue !== 'string') return
 
@@ -157,4 +157,4 @@ function OptionSpinner({ range, text }: RangeOptions) {
   )
 }
 
-export default OptionSpinner
+export default RangeStepper

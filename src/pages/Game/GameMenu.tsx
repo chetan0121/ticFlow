@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import NextButton from '../../components/ui/Buttons/NextButton'
-import ConfigHeader from '../../components/game/configs/ConfigHeader'
-import GameSetupPanel from '../../components/game/configs/GameSetupPanel'
+import MenuHeader from '../../components/game/menu/MenuHeader'
+import MenuSetupPanel from '../../components/game/menu/MenuSetup'
 import { useWindowEnterKey } from '../../hooks/useWindowEnterKey'
 import AppRoutes from '../../router/AppRoutes'
 
@@ -22,9 +22,9 @@ function GameMenu() {
 
   return (
     <div className="flex h-full w-full max-w-6xl flex-col gap-10 py-10">
-      <ConfigHeader title={TEXT.title} />
+      <MenuHeader title={TEXT.title} />
 
-      <GameSetupPanel maxWidth="100%" />
+      <MenuSetupPanel />
 
       <div className="self-center md:self-baseline">
         <NextButton text={TEXT.buttons.startGame} onClick={startGame} />

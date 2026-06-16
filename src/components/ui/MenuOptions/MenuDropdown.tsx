@@ -156,7 +156,7 @@ function OptionRow({
   )
 }
 
-function OptionDropdown({ selection, text }: DropDownOptions) {
+function MenuDropdown({ selection, text }: DropDownOptions) {
   const buttonId = useId()
   const listboxId = useId()
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -282,4 +282,4 @@ function OptionDropdown({ selection, text }: DropDownOptions) {
   )
 }
 
-export default OptionDropdown
+export default MenuDropdown
