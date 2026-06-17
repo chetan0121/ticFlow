@@ -4,10 +4,10 @@ import {
   GAME_SETUP_TEXT,
   GAME_TIME_CONTROLS,
   type OptionSelection,
-  type RangeConfig,
+  type GameParamRange,
   type SetupText,
 } from '../state/constants/menuConstants'
-import { useGameConfigState } from '../state/game/config/useGameConfigState'
+import { useMenuState } from '../state/game/Menu/useMenuState'
 
 export interface DropDownOptions {
   key: string
@@ -18,8 +18,8 @@ export interface DropDownOptions {
 export interface RangeOptions {
   key: string
   text: SetupText
-  range: RangeConfig & {
-    setValue: (value: RangeConfig['value']) => void
+  range: GameParamRange & {
+    setValue: (value: GameParamRange['value']) => void
   }
 }
 
@@ -29,7 +29,7 @@ export function useGameSetupOptions(): readonly GameSetupOptions[] {
   const {
     state: { selectedMode, timeControl, moveLimit },
     actions: { setSelectedMode, setTimeControl, setMoveLimit },
-  } = useGameConfigState()
+  } = useMenuState()
 
   return [
     {

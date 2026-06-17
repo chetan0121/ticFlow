@@ -34,7 +34,7 @@ export interface OptionSelection {
 type specialType = number | null
 
 // Range contract for numeric spinner controls
-export interface RangeConfig {
+export interface GameParamRange {
   min: number
   max: number
   step: number
@@ -86,14 +86,14 @@ export const GAME_MODES: ModeList = [
   },
 ]
 
-export const GAME_TIME_CONTROLS: RangeConfig = {
+export const GAME_TIME_CONTROLS: GameParamRange = {
   min: 1,
   max: 960,
   step: 1,
   value: null,
 }
 
-export const GAME_MOVE_LIMITS: RangeConfig = {
+export const GAME_MOVE_LIMITS: GameParamRange = {
   min: 6,
   max: 998,
   step: 2,
