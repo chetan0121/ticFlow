@@ -7,7 +7,7 @@ interface GameMenuGridProps {
 function GameMenuGrid({ children }: GameMenuGridProps) {
   return (
     <div
-      className='grid w-full gap-4'
+      className="grid w-full gap-4"
       style={{
         gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 18rem), 1fr))',
       }}

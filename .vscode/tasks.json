@@ -4,8 +4,11 @@
     {
       "label": "Run dev",
       "type": "shell",
-      "command": "bun",
-      "args": ["run", "dev"],
+      "command": "cmd",
+      "args": [
+        "/k",
+        "bun run dev"
+      ],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
@@ -23,8 +26,11 @@
     {
       "label": "Run format",
       "type": "shell",
-      "command": "bun",
-      "args": ["run", "format"],
+      "command": "cmd",
+      "args": [
+        "/k",
+        "bun run format"
+      ],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
@@ -42,8 +48,11 @@
     {
       "label": "Run lint",
       "type": "shell",
-      "command": "bun",
-      "args": ["run", "lint"],
+      "command": "cmd",
+      "args": [
+        "/k",
+        "bun run lint"
+      ],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
@@ -61,8 +70,11 @@
     {
       "label": "Run ts-check",
       "type": "shell",
-      "command": "bun",
-      "args": ["run", "ts-check"],
+      "command": "cmd",
+      "args": [
+        "/k",
+        "bun run ts-check"
+      ],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
@@ -80,8 +92,11 @@
     {
       "label": "Run build",
       "type": "shell",
-      "command": "bun",
-      "args": ["run", "build"],
+      "command": "cmd",
+      "args": [
+        "/k",
+        "bun run build"
+      ],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
@@ -99,8 +114,11 @@
     {
       "label": "Run release",
       "type": "shell",
-      "command": "bun",
-      "args": ["run", "release"],
+      "command": "cmd",
+      "args": [
+        "/k",
+        "bun run release"
+      ],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
@@ -118,8 +136,11 @@
     {
       "label": "Run preview",
       "type": "shell",
-      "command": "bun",
-      "args": ["run", "preview"],
+      "command": "cmd",
+      "args": [
+        "/k",
+        "bun run preview"
+      ],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
