@@ -1,8 +1,8 @@
 import { useId, useMemo, useRef } from 'react'
 import type { KeyboardEvent, ReactNode, RefObject } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
-import type { DropDownOptions } from '../../../hooks/useGameSetupOptions'
 import { useClickOutsideClose } from '../../../hooks/useClickOutsideClose'
+import type { DropDownOptions } from '../../../types/menuOptions'
 
 const DEFAULT_TEXT = {
   modalTitle: 'Select Option',

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FocusEvent, KeyboardEvent } from 'react'
-import type { RangeOptions } from '../../../hooks/useGameSetupOptions'
 import { Minus, Plus } from 'lucide-react'
+import type { RangeOptions } from '../../../types/menuOptions'
 
 const hasText = (value?: string) => Boolean(value && value.trim().length > 0)
 
