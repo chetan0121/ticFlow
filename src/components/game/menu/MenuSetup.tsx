@@ -9,7 +9,7 @@ function MenuSetupPanel() {
   return (
     <GameMenuGrid>
       {setupOptions.map(option => {
-        if ('selection' in option) {
+        if ('selection' in option && option.selection.options.length >= 2) {
           return <MenuDropdown {...option} key={option.key} />
         } else if ('range' in option) {
           return <RangeStepper {...option} key={option.key} />
