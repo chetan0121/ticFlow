@@ -1,24 +1,41 @@
 import { createContext } from 'react'
-import { GAME_MODES, GAME_MOVE_LIMITS, GAME_TIME_CONTROLS } from '../../constants/menuConstants'
+import {
+  GAME_MODES,
+  GAME_MOVE_LIMITS,
+  GAME_SUB_MODES,
+  GAME_TIME_CONTROLS,
+  type CoreModes,
+  type RangeValue,
+  type SubModes,
+} from '../../constants/menuConstants'
 
 // Default Menu values (Add new Menu state here)
-export const INITIAL_STATE = {
-  selectedMode: GAME_MODES[0].value,
-  timeControl: GAME_TIME_CONTROLS.value,
-  moveLimit: GAME_MOVE_LIMITS.value,
+const defaultCoreMode = GAME_MODES().modes[0].value
+const defaultSubMode = GAME_SUB_MODES(defaultCoreMode).modes[0].value
+
+export interface MenuStateType {
+  coreMode: CoreModes
+  subMode: SubModes
+  timeControl: RangeValue
+  moveLimit: RangeValue
 }
 
-export type GameMenuState = typeof INITIAL_STATE
+export const INITIAL_STATE = {
+  coreMode: defaultCoreMode,
+  subMode: defaultSubMode,
+  timeControl: GAME_TIME_CONTROLS.range.value,
+  moveLimit: GAME_MOVE_LIMITS.range.value,
+} satisfies MenuStateType
 
 type SetterName<Key extends string> = `set${Capitalize<Key>}`
 
 export type GameMenuSetters = {
-  [Key in keyof GameMenuState as SetterName<string & Key>]: (value: GameMenuState[Key]) => void
+  [Key in keyof MenuStateType as SetterName<string & Key>]: (value: MenuStateType[Key]) => void
 }
 
-export interface MenuContextValueType {
-  state: GameMenuState
+export interface MenuContextType {
+  state: MenuStateType
   actions: GameMenuSetters
 }
 
-export const GameMenuContext = createContext<MenuContextValueType | undefined>(undefined)
+export const GameMenuContext = createContext<MenuContextType | undefined>(undefined)

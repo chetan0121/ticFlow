@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { GameMenuContext, type MenuContextType } from '../state/game/Menu/MenuContext'
+import { GameMenuContext, type MenuContextType } from '../state/game/menu/MenuContext'
 
 // Access context with this safe hook
 export function useMenuState(): MenuContextType {

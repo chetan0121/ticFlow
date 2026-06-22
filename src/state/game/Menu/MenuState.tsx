@@ -3,18 +3,18 @@ import {
   GameMenuContext,
   INITIAL_STATE,
   type GameMenuSetters,
-  type GameMenuState,
+  type MenuStateType,
 } from './MenuContext'
 
 function toSetterName(key: string): keyof GameMenuSetters {
   return `set${key.charAt(0).toUpperCase()}${key.slice(1)}` as keyof GameMenuSetters
 }
 
-function createActions(setState: Dispatch<SetStateAction<GameMenuState>>): GameMenuSetters {
-  return (Object.keys(INITIAL_STATE) as (keyof GameMenuState)[]).reduce((actions, key) => {
+function createActions(setState: Dispatch<SetStateAction<MenuStateType>>): GameMenuSetters {
+  return (Object.keys(INITIAL_STATE) as (keyof MenuStateType)[]).reduce((actions, key) => {
     return {
       ...actions,
-      [toSetterName(key)]: (value: GameMenuState[typeof key]) => {
+      [toSetterName(key)]: (value: MenuStateType[typeof key]) => {
         setState(current => ({ ...current, [key]: value }))
       },
     }
@@ -23,7 +23,7 @@ function createActions(setState: Dispatch<SetStateAction<GameMenuState>>): GameM
 
 // Stores Menu state and exposes setters
 export function GameMenuProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<GameMenuState>(INITIAL_STATE)
+  const [state, setState] = useState<MenuStateType>(INITIAL_STATE)
 
   const actions = useMemo(() => createActions(setState), [])
 
