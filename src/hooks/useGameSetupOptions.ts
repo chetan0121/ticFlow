@@ -1,67 +1,64 @@
 import {
   GAME_MODES,
-  GAME_MOVE_LIMITS,
-  GAME_SETUP_TEXT,
+  GAME_SUB_MODES,
   GAME_TIME_CONTROLS,
-  type OptionSelection,
-  type GameParamRange,
-  type SetupText,
+  GAME_MOVE_LIMITS,
+  type CoreModes,
 } from '../state/constants/menuConstants'
-import { useMenuState } from '../state/game/Menu/useMenuState'
+import type { GameSetupOptions } from '../types/menuOptions'
+import { useMenuState } from './useMenuState'
 
-export interface DropDownOptions {
-  key: string
-  text: SetupText
-  selection: OptionSelection
-}
-
-export interface RangeOptions {
-  key: string
-  text: SetupText
-  range: GameParamRange & {
-    setValue: (value: GameParamRange['value']) => void
-  }
-}
-
-type GameSetupOptions = DropDownOptions | RangeOptions
-
-export function useGameSetupOptions(): readonly GameSetupOptions[] {
+export function useGameSetupOptions(): GameSetupOptions[] {
   const {
-    state: { selectedMode, timeControl, moveLimit },
-    actions: { setSelectedMode, setTimeControl, setMoveLimit },
+    state: { coreMode, subMode, timeControl, moveLimit },
+    actions: { setCoreMode, setSubMode, setTimeControl, setMoveLimit },
   } = useMenuState()
+
+  const { text: modeText, modes: codeModes } = GAME_MODES()
+  const { text: subModeText, modes: subModes } = GAME_SUB_MODES(coreMode)
+
+  const selectCoreMode = (value: string) => {
+    const nextCoreMode = value as CoreModes
+    setCoreMode(nextCoreMode)
+    setSubMode(GAME_SUB_MODES(nextCoreMode).modes[0].value)
+  }
 
   return [
     {
       key: 'mode',
-      text: GAME_SETUP_TEXT.mode,
+      text: modeText,
       selection: {
-        options: GAME_MODES,
-        currentOption: selectedMode,
-        selectOption: setSelectedMode,
+        options: codeModes,
+        currentOption: coreMode,
+        selectOption: selectCoreMode,
+      },
+    },
+    {
+      key: 'subMode',
+      text: subModeText,
+      selection: {
+        options: subModes,
+        currentOption: subMode,
+        selectOption: setSubMode as (value: string) => unknown,
       },
     },
     {
       key: 'turnTimer',
-      text: GAME_SETUP_TEXT.turnTimer,
+      text: GAME_TIME_CONTROLS.text,
       range: {
-        min: GAME_TIME_CONTROLS.min,
-        max: GAME_TIME_CONTROLS.max,
-        step: GAME_TIME_CONTROLS.step,
+        ...GAME_TIME_CONTROLS.range,
         value: timeControl,
         setValue: setTimeControl,
       },
     },
     {
       key: 'moveCap',
-      text: GAME_SETUP_TEXT.moveCap,
+      text: GAME_MOVE_LIMITS.text,
       range: {
-        min: GAME_MOVE_LIMITS.min,
-        max: GAME_MOVE_LIMITS.max,
-        step: GAME_MOVE_LIMITS.step,
+        ...GAME_MOVE_LIMITS.range,
         value: moveLimit,
         setValue: setMoveLimit,
       },
     },
-  ] as const
+  ]
 }
