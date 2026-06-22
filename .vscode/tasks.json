@@ -5,10 +5,7 @@
       "label": "Run dev",
       "type": "shell",
       "command": "cmd",
-      "args": [
-        "/k",
-        "bun run dev"
-      ],
+      "args": ["/k", "bun run dev"],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
@@ -27,10 +24,7 @@
       "label": "Run format",
       "type": "shell",
       "command": "cmd",
-      "args": [
-        "/k",
-        "bun run format"
-      ],
+      "args": ["/k", "bun run format"],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
@@ -49,10 +43,7 @@
       "label": "Run lint",
       "type": "shell",
       "command": "cmd",
-      "args": [
-        "/k",
-        "bun run lint"
-      ],
+      "args": ["/k", "bun run lint"],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
@@ -71,10 +62,7 @@
       "label": "Run ts-check",
       "type": "shell",
       "command": "cmd",
-      "args": [
-        "/k",
-        "bun run ts-check"
-      ],
+      "args": ["/k", "bun run ts-check"],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
@@ -93,10 +81,7 @@
       "label": "Run build",
       "type": "shell",
       "command": "cmd",
-      "args": [
-        "/k",
-        "bun run build"
-      ],
+      "args": ["/k", "bun run build"],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
@@ -115,10 +100,7 @@
       "label": "Run release",
       "type": "shell",
       "command": "cmd",
-      "args": [
-        "/k",
-        "bun run release"
-      ],
+      "args": ["/k", "bun run release"],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
@@ -137,10 +119,7 @@
       "label": "Run preview",
       "type": "shell",
       "command": "cmd",
-      "args": [
-        "/k",
-        "bun run preview"
-      ],
+      "args": ["/k", "bun run preview"],
       "group": "build",
       "problemMatcher": [],
       "runOptions": {
