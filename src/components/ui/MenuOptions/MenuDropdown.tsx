@@ -1,7 +1,7 @@
 import { useId, useMemo, useRef } from 'react'
 import type { KeyboardEvent, ReactNode, RefObject } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
-import { useClickOutsideClose } from '../../../hooks/useClickOutsideClose'
+import { useClickOutsideClose } from '../../../hooks/ui/useClickOutsideClose'
 import type { DropDownOptions } from '../../../types/menuOptions'
 
 const DEFAULT_TEXT = {

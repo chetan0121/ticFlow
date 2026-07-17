@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import HomeHero from '../../components/ui/HomeHero'
-import { useWindowEnterKey } from '../../hooks/useWindowEnterKey'
+import { useWindowEnterKey } from '../../hooks/ui/useWindowEnterKey'
 import AppRoutes from '../../router/AppRoutes'
 
 function Home() {

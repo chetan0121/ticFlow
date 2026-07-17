@@ -1,11 +1,11 @@
 import { lazy } from 'react'
 
 // Lazy load pages
-const Home = lazy(() => import('../pages/Main/Home'))
-const GameBoard = lazy(() => import('../pages/Game/GameBoard'))
-const LoadingScreen = lazy(() => import('../pages/Main/LoadingScreen'))
-const NotFoundPage = lazy(() => import('../pages/Main/NotFound'))
-const GameMenu = lazy(() => import('../pages/Game/GameMenu'))
+const Home = lazy(() => import('../pages/main/Home'))
+const GameBoard = lazy(() => import('../pages/game/GameBoard'))
+const LoadingScreen = lazy(() => import('../pages/main/LoadingScreen'))
+const NotFoundPage = lazy(() => import('../pages/main/NotFound'))
+const GameMenu = lazy(() => import('../pages/game/GameMenu'))
 
 // Mapping routes
 const AppRoutes = {

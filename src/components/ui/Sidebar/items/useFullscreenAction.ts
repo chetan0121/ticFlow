@@ -1,5 +1,5 @@
 import { Fullscreen, Minimize } from 'lucide-react'
-import { useFullscreen } from '../../../../hooks/useFullscreen'
+import { useFullscreen } from '../../../../hooks/ui/useFullscreen'
 
 function useFullscreenAction() {
   const { isFullscreen, toggleFullscreen } = useFullscreen()

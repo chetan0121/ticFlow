@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import AppRoutes from './AppRoutes'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import LoadingScreen from '../pages/Main/LoadingScreen'
+import LoadingScreen from '../pages/main/LoadingScreen'
 import BasePage from '../pages/BasePage'
 
 const AppRouter = () => {

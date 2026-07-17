@@ -1,9 +1,4 @@
-import type {
-  RangeParam,
-  OptionList,
-  RangeValue,
-  SetupText,
-} from '../state/constants/menuConstants'
+import type { RangeParam, OptionList, RangeValue, SetupText } from '../constants/menuConstants'
 
 export interface OptionSelection<T> {
   options: OptionList<T>

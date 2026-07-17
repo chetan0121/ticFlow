@@ -1,5 +1,5 @@
 import { SidebarOpen } from 'lucide-react'
-import { useClickOutsideClose } from '../../../hooks/useClickOutsideClose'
+import { useClickOutsideClose } from '../../../hooks/ui/useClickOutsideClose'
 import SidebarPanel from './SidebarPanel'
 
 function SidebarButton() {

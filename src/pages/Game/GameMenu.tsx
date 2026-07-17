@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import NextButton from '../../components/ui/Buttons/NextButton'
 import MenuHeader from '../../components/game/menu/MenuHeader'
 import MenuSetupPanel from '../../components/game/menu/MenuSetup'
-import { useWindowEnterKey } from '../../hooks/useWindowEnterKey'
+import { useWindowEnterKey } from '../../hooks/ui/useWindowEnterKey'
 import AppRoutes from '../../router/AppRoutes'
 
 const TEXT = {
