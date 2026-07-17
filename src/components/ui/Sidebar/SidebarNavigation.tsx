@@ -1,6 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
 import useFullscreenAction from './items/useFullscreenAction'
-import useGameSetupLink from './items/useGameSetupLink'
 
 interface SidebarNavItem {
   key: string
@@ -10,9 +9,8 @@ interface SidebarNavItem {
 }
 
 function SidebarNavigation() {
-  const gameSetupLink = useGameSetupLink()
   const fullscreenAction = useFullscreenAction()
-  const items: SidebarNavItem[] = [gameSetupLink, fullscreenAction]
+  const items: SidebarNavItem[] = [fullscreenAction]
 
   return (
     <div className="border-y border-t-3 border-white/10 border-t-white/20">
