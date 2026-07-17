@@ -4,8 +4,8 @@ import {
   GAME_TIME_CONTROLS,
   GAME_MOVE_LIMITS,
   type CoreModes,
-} from '../state/constants/menuConstants'
-import type { GameSetupOptions } from '../types/menuOptions'
+} from '../../constants/menuConstants'
+import type { GameSetupOptions } from '../../types/menuOptions'
 import { useMenuState } from './useMenuState'
 
 export function useGameSetupOptions(): GameSetupOptions[] {
