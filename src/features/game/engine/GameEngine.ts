@@ -3,71 +3,53 @@ import type { GameConfig, GameState, Move } from '../types'
 
 export class Engine {
   private readonly config: GameConfig
-  private state: GameState
 
-  constructor(config: GameConfig, state: GameState) {
-    this.config = config
-    this.state = cloneGameState(state)
-    this.state.status = 'playing'
-    this.state.baseGame.currentTurn = Math.random() < 0.5 ? 'O' : 'X'
+  constructor(config: GameConfig) {
+    this.config = structuredClone(config)
   }
 
-  nextMove(nextMove: Move): void {
-    const board = this.state.baseGame.board
+  nextMove(game: GameState, nextMove: Move): GameState | null {
+    const board = game.baseGame.board
 
-    if (board.length === 0 || board.length !== board[0].length) return
-    if (nextMove[0] >= board.length || nextMove[1] >= board[0].length) return
-    if (nextMove[0] < 0 || nextMove[1] < 0) return
-    if (board[nextMove[0]][nextMove[1]] !== null) return
-    if (this.state.status !== 'playing') return
+    if (board.length === 0 || board.length !== board[0].length) return null
+    if (nextMove[0] >= board.length || nextMove[1] >= board[0].length) return null
+    if (nextMove[0] < 0 || nextMove[1] < 0) return null
+    if (board[nextMove[0]][nextMove[1]] !== null) return null
+    if (game.status !== 'playing') return null
 
-    const currSign = this.state.baseGame.currentTurn
-    const currPlayer = currSign === 'O' ? this.state.playerO : this.state.playerX
+    const currGame = cloneGameState(game)
+    const currBoard = currGame.baseGame.board
+    const currSign = currGame.baseGame.currentTurn
+    const currPlayer = currSign === 'O' ? currGame.playerO : currGame.playerX
 
     // Add sign
-    board[nextMove[0]][nextMove[1]] = currSign
+    currBoard[nextMove[0]][nextMove[1]] = currSign
     currPlayer.moves.push(nextMove)
 
     // Remove old sign
-    if (currPlayer.moves.length > board.length) {
+    if (currPlayer.moves.length > currBoard.length) {
       const lastMove = currPlayer.moves.shift() as Move
-      board[lastMove[0]][lastMove[1]] = null
+      currBoard[lastMove[0]][lastMove[1]] = null
     }
 
     // Check if winning
-    if (currPlayer.moves.length === board.length && Engine.checkWon(currPlayer.moves)) {
-      this.state.winner = currSign
-      this.state.status = 'finished'
-      return
+    if (currPlayer.moves.length === currBoard.length && Engine.checkWon(currPlayer.moves)) {
+      currGame.winner = currSign
+      currGame.status = 'finished'
+      return currGame
     }
 
     // Change turn and increase total moves
-    this.state.baseGame.currentTurn = currSign === 'O' ? 'X' : 'O'
-    this.state.baseGame.moveCount += 1
+    currGame.baseGame.currentTurn = currSign === 'O' ? 'X' : 'O'
+    currGame.baseGame.moveCount += 1
 
     // Check move limit
-    if (this.config.moveLimit && this.state.baseGame.moveCount >= this.config.moveLimit) {
-      this.state.winner = 'draw'
-      this.state.status = 'finished'
+    if (this.config.moveLimit && currGame.baseGame.moveCount >= this.config.moveLimit) {
+      currGame.winner = 'draw'
+      currGame.status = 'finished'
     }
-  }
 
-  tick(elapsedTimeInMs: number) {
-    if (this.state.status !== 'playing') return
-    if (this.config.timeLimit === null) return
-
-    const currTurn = this.state.baseGame.currentTurn
-    const currPlayer = currTurn == 'O' ? this.state.playerO : this.state.playerX
-    currPlayer.remainingTime! -= elapsedTimeInMs
-
-    if (currPlayer.remainingTime! <= 0.0) {
-      this.state.winner = currTurn == 'O' ? 'X' : 'O'
-      this.state.status = 'finished'
-    }
-  }
-
-  getState(): GameState {
-    return cloneGameState(this.state)
+    return currGame
   }
 
   static checkWon(currMoves: Move[]) {
