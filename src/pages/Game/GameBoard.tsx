@@ -1,13 +1,13 @@
-import TicTacToeGrid from '../../components/game/board/TicTacToeGrid'
-import useBoardHandler from '../../hooks/game/useBoardHandler'
-import { useMenuState } from '../../hooks/menu/useMenuState'
-import { GAME_MODES, GAME_SUB_MODES } from '../../constants/menuConstants'
+import TicTacToeGrid from '../../features/game/components/Grid'
+import useBoard from '../../features/game/hooks/useBoard'
+import { useMenuContext } from '../../features/menu/hooks/useMenuContext'
+import { GAME_MODES, GAME_SUB_MODES } from '../../features/menu/constants'
 
 function GameBoard() {
-  const { board, onCellClick } = useBoardHandler()
+  const { board, onCellClick } = useBoard()
   const {
     state: { coreMode, subMode },
-  } = useMenuState()
+  } = useMenuContext()
 
   const coreModeLabel =
     GAME_MODES().modes.find(mode => mode.value === coreMode)?.label ?? coreMode

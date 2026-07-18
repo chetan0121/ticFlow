@@ -1,5 +1,5 @@
 import AppRouter from './router/AppRouter'
-import { GameMenuProvider } from './game/menu/MenuState'
+import { GameMenuProvider } from './features/menu/context/MenuProvider'
 
 function App() {
   return (

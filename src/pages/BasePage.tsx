@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
-import BackButton from '../components/ui/Buttons/BackButton'
-import SidebarButton from '../components/ui/Sidebar/SidebarButton'
+import BackButton from '../components/buttons/BackButton'
+import SidebarButton from '../components/sidebar/SidebarButton'
 
 interface BasePageProps {
   children: ReactNode

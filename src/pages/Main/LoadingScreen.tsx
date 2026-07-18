@@ -1,6 +1,6 @@
 import { useState, type FC } from 'react'
-import GoHomeBtn from '../../components/ui/Buttons/GotoHome.tsx'
-import LoadingAnim, { type LoadingMessage } from '../../components/ui/LoadingAnim.tsx'
+import GoHomeBtn from '../../components/buttons/HomeButton.tsx'
+import LoadingAnimation, { type LoadingMessage } from '../../components/LoadingAnimation.tsx'
 
 const loadingMessages: LoadingMessage[] = [
   { txt: 'Loading...', keepTime: 5 },
@@ -13,7 +13,7 @@ const LoadingScreen: FC = () => {
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-14">
-      <LoadingAnim messages={loadingMessages} onLastMessage={() => setShowHomeBtn(true)} />
+      <LoadingAnimation messages={loadingMessages} onLastMessage={() => setShowHomeBtn(true)} />
       <div
         className={`transition-opacity duration-300 ${showHomeBtn ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
       >

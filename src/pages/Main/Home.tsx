@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-import HomeHero from '../../components/ui/HomeHero'
-import { useWindowEnterKey } from '../../hooks/ui/useWindowEnterKey'
+import HomeHero from '../../components/HomeHero'
+import { useEnterKey } from '../../hooks/useEnterKey'
 import AppRoutes from '../../router/AppRoutes'
 
 function Home() {
@@ -9,7 +9,7 @@ function Home() {
     void nav(AppRoutes.gameMenu.path)
   }
 
-  useWindowEnterKey(toGamePage)
+  useEnterKey(toGamePage)
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-2">
