@@ -1,19 +1,25 @@
 import { Circle, X } from 'lucide-react'
 import type { CellValue } from '../types'
 
+const MARK_STYLES: Record<Exclude<CellValue, null>, string> = {
+  O: 'border-cyan-300/45 bg-cyan-400/9 text-cyan-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_24px_rgba(34,211,238,0.12)]',
+  X: 'border-rose-300/45 bg-rose-400/9 text-rose-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_24px_rgba(251,113,133,0.12)]',
+}
+
 interface CellProps {
   value: CellValue
   rowIndex: number
   cellIndex: number
+  isLast: boolean
   onClick: (rowIndex: number, cellIndex: number) => void
 }
 
-function BoardCell({ value, rowIndex, cellIndex, onClick }: CellProps) {
+function BoardCell({ value, rowIndex, cellIndex, isLast, onClick }: CellProps) {
   const renderSign = () => {
     if (value === 'O') {
       return (
         <Circle
-          className="h-8 w-8 text-[hsl(38,95%,62%)] drop-shadow-[0_0_10px_rgba(255,190,80,0.25)] sm:h-10 sm:w-10 md:h-12 md:w-12"
+          className="h-[46%] w-[46%] text-cyan-200 drop-shadow-[0_0_14px_rgba(103,232,249,0.32)]"
           strokeWidth={1.75}
           fill="none"
         />
@@ -21,21 +27,34 @@ function BoardCell({ value, rowIndex, cellIndex, onClick }: CellProps) {
     } else if (value === 'X') {
       return (
         <X
-          className="h-8 w-8 text-[hsl(38,95%,72%)] drop-shadow-[0_0_10px_rgba(255,220,140,0.2)] sm:h-10 sm:w-10 md:h-12 md:w-12"
-          strokeWidth={2.2}
+          className="h-[52%] w-[52%] text-rose-200 drop-shadow-[0_0_14px_rgba(253,164,175,0.3)]"
+          strokeWidth={2.45}
         />
       )
     }
     return null
   }
 
+  const cellStateClass = value
+    ? MARK_STYLES[value]
+    : 'border-white/10 bg-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] hover:border-amber-300/55 hover:bg-white/10 active:bg-white/14'
+  const lastMoveClass = isLast ? 'opacity-65 saturate-65 ring-2 ring-amber-200/45' : ''
+
   return (
     <button
       type="button"
-      aria-label={`Cell ${rowIndex + 1}, ${cellIndex + 1}`}
+      aria-label={
+        value
+          ? `Cell ${rowIndex + 1}, ${cellIndex + 1}, ${value}`
+          : `Empty cell ${rowIndex + 1}, ${cellIndex + 1}`
+      }
       onClick={() => onClick(rowIndex, cellIndex)}
-      className="flex aspect-square min-w-0 items-center justify-center rounded-md border border-white/10 bg-white/6 font-['Oswald'] text-4xl font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-200 hover:border-[hsl(38,95%,54%)]/60 hover:bg-white/11 focus-visible:border-[hsl(38,95%,54%)] focus-visible:ring-2 focus-visible:ring-[hsl(38,95%,54%)]/45 focus-visible:outline-none active:bg-white/16 sm:text-5xl md:text-6xl"
+      disabled={value !== null}
+      className={`relative flex aspect-square min-w-0 items-center justify-center rounded-md border transition-[background,border-color,box-shadow,opacity,transform] duration-200 focus-visible:border-amber-300 focus-visible:ring-2 focus-visible:ring-amber-300/45 focus-visible:outline-none disabled:cursor-default ${cellStateClass} ${lastMoveClass}`}
     >
+      {isLast ? (
+        <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-amber-200 shadow-[0_0_10px_rgba(253,230,138,0.75)]" />
+      ) : null}
       {renderSign()}
     </button>
   )
