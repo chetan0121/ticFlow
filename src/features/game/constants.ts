@@ -1,32 +1,30 @@
-import type { BaseGameState, BoardState, GameState } from './types'
+import type { BoardState, GameState } from './types'
 
-export const DEFAULT_BOARD_STATE: BoardState = [
-  [null, null, null],
-  [null, null, null],
-  [null, null, null],
-]
-
-export const DEFAULT_BASE_GAME: BaseGameState = {
-  board: DEFAULT_BOARD_STATE,
-  currentTurn: 'O',
-  onCellClick: () => null,
-  moveCount: 0,
+export function createEmptyBoard(size: number): BoardState {
+  return Array.from({ length: size }, () => Array.from({ length: size }, () => null))
 }
 
-export const DEFAULT_GAME_STATE: GameState = {
-  baseGame: DEFAULT_BASE_GAME,
-  playerO: {
-    userId: '1',
-    remainingTime: 0,
-    moves: [],
-  },
-  playerX: {
-    userId: '2',
-    remainingTime: 0,
-    moves: [],
-  },
-  status: 'waiting',
-  winner: null,
+export function createDefaultGameState(boardSize: number = 3): GameState {
+  return {
+    baseGame: {
+      board: createEmptyBoard(boardSize),
+      currentTurn: 'O',
+      onCellClick: () => null,
+      moveCount: 0,
+    },
+    playerO: {
+      userId: '1',
+      remainingTime: 0,
+      moves: [],
+    },
+    playerX: {
+      userId: '2',
+      remainingTime: 0,
+      moves: [],
+    },
+    status: 'waiting',
+    winner: null,
+  }
 }
 
 export function cloneGameState(gameState: GameState): GameState {
