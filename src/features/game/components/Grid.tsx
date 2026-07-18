@@ -1,12 +1,12 @@
 import type { BoardState } from '../types'
-import TicTacToeCell from './Cell'
+import BoardCell from './Cell'
 
-interface TicTacToeGridProps {
+interface GridProps {
   board: BoardState
   onCellClick: (rowIndex: number, cellIndex: number) => void
 }
 
-function TicTacToeGrid({ board, onCellClick }: TicTacToeGridProps) {
+function BoardGrid({ board, onCellClick }: GridProps) {
   const columnCount = board[0]?.length ?? 0
 
   return (
@@ -18,7 +18,7 @@ function TicTacToeGrid({ board, onCellClick }: TicTacToeGridProps) {
     >
       {board.map((row, rowIndex) =>
         row.map((value, cellIndex) => (
-          <TicTacToeCell
+          <BoardCell
             key={`${rowIndex}-${cellIndex}`}
             value={value}
             rowIndex={rowIndex}
@@ -31,4 +31,4 @@ function TicTacToeGrid({ board, onCellClick }: TicTacToeGridProps) {
   )
 }
 
-export default TicTacToeGrid
+export default BoardGrid

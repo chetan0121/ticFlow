@@ -1,12 +1,15 @@
-import type { Dispatch, SetStateAction } from 'react'
+import type { Engine } from '../engine/GameEngine'
+
 import type { GameCellClickHandler, GameState } from '../types'
-import { cloneGameState, DEFAULT_GAME_STATE } from '../constants'
+
+type EngineInstance = InstanceType<typeof Engine>
 
 export function forFriendLocal(
-  setBoardState: Dispatch<SetStateAction<GameState>>
+  setGame: React.Dispatch<React.SetStateAction<GameState>>,
+  engine: EngineInstance
 ): GameCellClickHandler {
-  return () => {
-    setBoardState(cloneGameState(DEFAULT_GAME_STATE))
-    void Math.random()
+  return (rowIndex: number, cellIndex: number) => {
+    engine.nextMove([rowIndex, cellIndex])
+    setGame(engine.getState())
   }
 }

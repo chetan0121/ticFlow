@@ -176,15 +176,18 @@ function MenuDropdown({ selection, text }: DropDownOptions) {
   if (!selectedOption) return null
 
   const focusOption = (index: number) => optionRefs.current[index]?.focus()
+
   const openAndFocus = (index: number) => {
     open()
     requestAnimationFrame(() => focusOption(index))
   }
+
   const chooseOption = (value: (typeof selectedOption)['value']) => {
     selectOption(value)
     close()
     requestAnimationFrame(() => buttonRef.current?.focus())
   }
+
   const handleTriggerKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.key === 'ArrowDown') {
       event.preventDefault()
@@ -194,6 +197,7 @@ function MenuDropdown({ selection, text }: DropDownOptions) {
       openAndFocus(options.length - 1)
     }
   }
+
   const handleOptionKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     if (event.key === 'ArrowDown') {
       event.preventDefault()
@@ -211,6 +215,9 @@ function MenuDropdown({ selection, text }: DropDownOptions) {
       event.preventDefault()
       close()
       buttonRef.current?.focus()
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      chooseOption(options[index].value)
     }
   }
 

@@ -1,4 +1,4 @@
-import TicTacToeGrid from '../../features/game/components/Grid'
+import BoardGrid from '../../features/game/components/Grid'
 import useBoard from '../../features/game/hooks/useBoard'
 import { useMenuContext } from '../../features/menu/hooks/useMenuContext'
 import { GAME_MODES, GAME_SUB_MODES } from '../../features/menu/constants'
@@ -28,7 +28,7 @@ function GameBoard() {
         </p>
       </div>
 
-      <TicTacToeGrid board={board} onCellClick={onCellClick} />
+      <BoardGrid board={board} onCellClick={onCellClick} />
     </div>
   )
 }
