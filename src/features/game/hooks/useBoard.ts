@@ -1,30 +1,33 @@
 import { useState } from 'react'
-import { cloneGameState, DEFAULT_GAME_STATE } from '../constants'
-import { forFriendLocal } from '../utils/flocal'
-import type { GameCellClickHandler, GameState } from '../types'
+import { createDefaultGameState } from '../constants'
 import { useMenuContext } from '../../menu/hooks/useMenuContext'
+import type { GameCellClickHandler, GameConfig } from '../types'
+
+import { forFriendLocal } from '../utils/flocal'
+import { Engine } from '../engine/GameEngine'
 
 function useBoard() {
-  const {
-    state: { timeControl, subMode },
-  } = useMenuContext()
-  const initialBoardState: GameState = cloneGameState(DEFAULT_GAME_STATE)
-  initialBoardState.playerO.remainingTime = timeControl
-  initialBoardState.playerX.remainingTime = timeControl
-  const [boardState, setBoardState] = useState(initialBoardState)
-  let onCellClick: GameCellClickHandler = DEFAULT_GAME_STATE.baseGame.onCellClick
-  switch (subMode) {
+  const { state } = useMenuContext()
+  const config: GameConfig = {
+    subMode: state.subMode,
+    timeLimit: state.timeControl,
+    moveLimit: state.moveLimit,
+  }
+
+  const [game, setGame] = useState(createDefaultGameState())
+  const engine = new Engine(config, game)
+
+  let onCellClick: GameCellClickHandler = () => undefined
+
+  switch (state.subMode) {
     case 'flocal':
-      onCellClick = forFriendLocal(setBoardState)
-      break
-    default:
+      onCellClick = forFriendLocal(setGame, engine)
       break
   }
+
   return {
-    ...boardState.baseGame,
+    board: game.baseGame.board,
     onCellClick,
-    playerO: boardState.playerO,
-    playerX: boardState.playerX,
   }
 }
 
