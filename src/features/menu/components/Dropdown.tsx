@@ -3,6 +3,7 @@ import type { KeyboardEvent, ReactNode, RefObject } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
 import type { DropDownOptions } from '../types'
 import { useOutsideClick } from '../../../hooks/useOutsideClick'
+import BaseOption from './BaseOption'
 
 const DEFAULT_TEXT = {
   modalTitle: 'Select Option',
@@ -222,22 +223,7 @@ function MenuDropdown({ selection, text }: DropDownOptions) {
   }
 
   return (
-    <section
-      className={`relative w-full rounded-2xl border p-4 transition-colors duration-300 ${
-        isOpen ? 'z-30 border-amber-100/20 bg-black/30' : 'border-white/10 bg-white/5.5'
-      }`}
-    >
-      <div className="mb-3">
-        {hasText(text.label) ? (
-          <span className="block text-left font-['Montserrat'] text-xs font-semibold tracking-[0.25em] text-amber-100/70 uppercase">
-            {text.label}
-          </span>
-        ) : null}
-        {hasText(text.helper) ? (
-          <p className="mt-1.5 text-left text-sm leading-5 text-white/50">{text.helper}</p>
-        ) : null}
-      </div>
-
+    <BaseOption text={text} isActive={isOpen}>
       <div className="relative" ref={ref}>
         <TriggerButton
           buttonRef={buttonRef}
@@ -285,7 +271,7 @@ function MenuDropdown({ selection, text }: DropDownOptions) {
           </div>
         </div>
       </div>
-    </section>
+    </BaseOption>
   )
 }
 

@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FocusEvent, KeyboardEvent } from 'react'
 import { Minus, Plus } from 'lucide-react'
 import type { RangeOptions } from '../types'
-
-const hasText = (value?: string) => Boolean(value && value.trim().length > 0)
+import BaseOption from './BaseOption'
 
 type inputType = number | string | null
 
@@ -106,19 +105,8 @@ function RangeStepper({ range, text }: RangeOptions) {
   }
 
   return (
-    <div className="flex w-full flex-col justify-around rounded-2xl border border-white/10 bg-white/5 p-4 shadow-inner shadow-black/20">
-      <div>
-        {hasText(text.label) ? (
-          <span className="block text-left font-['Montserrat'] text-sm font-medium tracking-[0.28em] text-white/55 uppercase">
-            {text.label}
-          </span>
-        ) : null}
-        {hasText(text.helper) ? (
-          <p className="mt-2 text-left text-sm text-white/55">{text.helper}</p>
-        ) : null}
-      </div>
-
-      <div className="mt-4 flex items-center gap-2">
+    <BaseOption text={text}>
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={decrement}
@@ -153,7 +141,7 @@ function RangeStepper({ range, text }: RangeOptions) {
           <Plus />
         </button>
       </div>
-    </div>
+    </BaseOption>
   )
 }
 
