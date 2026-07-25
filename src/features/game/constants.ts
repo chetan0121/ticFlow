@@ -9,7 +9,6 @@ export function createDefaultGameState(boardSize: number = 3): GameState {
     baseGame: {
       board: createEmptyBoard(boardSize),
       currentTurn: 'O',
-      onCellClick: () => null,
       moveCount: 0,
     },
     playerO: {

@@ -1,14 +1,10 @@
-import { cloneGameState } from '../constants'
-import type { GameConfig, GameState, Move } from '../types'
+import { cloneGameState } from '../constants.ts'
+import type { GameConfig, GameState, Move } from '../types.ts'
 
 export class Engine {
-  private readonly config: GameConfig
+  private constructor() {}
 
-  constructor(config: GameConfig) {
-    this.config = structuredClone(config)
-  }
-
-  nextMove(game: GameState, nextMove: Move): GameState | null {
+  static nextMove(game: GameState, nextMove: Move, config: GameConfig): GameState | null {
     const board = game.baseGame.board
 
     if (board.length === 0 || board.length !== board[0].length) return null
@@ -44,7 +40,7 @@ export class Engine {
     currGame.baseGame.moveCount += 1
 
     // Check move limit
-    if (this.config.moveLimit && currGame.baseGame.moveCount >= this.config.moveLimit) {
+    if (config.moveLimit && currGame.baseGame.moveCount >= config.moveLimit) {
       currGame.winner = 'draw'
       currGame.status = 'finished'
     }
