@@ -18,7 +18,6 @@ export type GameStatus = 'waiting' | 'playing' | 'paused' | 'finished'
 export interface BaseGameState {
   board: BoardState
   currentTurn: PlayerMark
-  onCellClick: GameCellClickHandler
   moveCount: number
 }
 
@@ -40,4 +39,21 @@ export interface GameConfig {
   subMode: SubModes
   timeLimit: RangeValue
   moveLimit: RangeValue
+}
+
+export interface BoardPlayers {
+  O: Player
+  X: Player
+}
+
+export interface BoardHookResult {
+  board: BoardState
+  currentTurn: PlayerMark
+  isLastMove: (rowIndex: number, cellIndex: number) => boolean
+  onCellClick: GameCellClickHandler
+  players: BoardPlayers
+  replay: () => void
+  status: GameStatus
+  timeLimit: RangeValue
+  winner: WinState
 }
