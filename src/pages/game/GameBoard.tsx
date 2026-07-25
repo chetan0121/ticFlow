@@ -44,10 +44,9 @@ function GameBoard() {
   const {
     board,
     currentTurn,
-    isLast,
+    isLastMove,
     onCellClick,
-    playerO,
-    playerX,
+    players,
     replay,
     status,
     timeLimit,
@@ -98,13 +97,13 @@ function GameBoard() {
             <>
               <PlayerTimer
                 mark="O"
-                remainingTime={playerO.remainingTime}
+                remainingTime={players.O.remainingTime}
                 active={currentTurn === 'O' && !winner}
                 winner={winner}
               />
               <PlayerTimer
                 mark="X"
-                remainingTime={playerX.remainingTime}
+                remainingTime={players.X.remainingTime}
                 active={currentTurn === 'X' && !winner}
                 winner={winner}
               />
@@ -126,7 +125,7 @@ function GameBoard() {
         </div>
       </div>
 
-      <BoardGrid board={board} isLast={isLast} onCellClick={onCellClick} />
+      <BoardGrid board={board} isLast={isLastMove} onCellClick={onCellClick} />
       <GameResultPopup
         actions={{
           back: handleBackToMenu,
