@@ -26,7 +26,7 @@ function GameMenu() {
 
       <MenuSetupPanel />
 
-      <div className="self-center md:self-baseline">
+      <div className="self-center pb-20 md:self-baseline md:pb-0">
         <NextButton text={TEXT.buttons.startGame} onClick={startGame} />
       </div>
     </div>

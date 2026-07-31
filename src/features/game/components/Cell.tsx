@@ -2,8 +2,8 @@ import { Circle, X } from 'lucide-react'
 import type { CellValue } from '../types'
 
 const MARK_STYLES: Record<Exclude<CellValue, null>, string> = {
-  O: 'border-cyan-300/45 bg-cyan-400/9 text-cyan-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_24px_rgba(34,211,238,0.12)]',
-  X: 'border-rose-300/45 bg-rose-400/9 text-rose-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_24px_rgba(251,113,133,0.12)]',
+  O: 'border-cyan-300/50 bg-cyan-400/10 text-cyan-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_24px_rgba(34,211,238,0.14)]',
+  X: 'border-rose-300/50 bg-rose-400/10 text-rose-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_24px_rgba(251,113,133,0.14)]',
 }
 
 interface CellProps {
@@ -37,8 +37,8 @@ function BoardCell({ value, rowIndex, cellIndex, isLast, onClick }: CellProps) {
 
   const cellStateClass = value
     ? MARK_STYLES[value]
-    : 'border-white/10 bg-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] hover:border-amber-300/55 hover:bg-white/10 active:bg-white/14'
-  const lastMoveClass = isLast ? 'opacity-65 saturate-65 ring-2 ring-amber-200/45' : ''
+    : 'border-white/10 bg-white/[0.055] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] hover:-translate-y-0.5 hover:border-amber-300/55 hover:bg-white/10 active:translate-y-0 active:bg-white/14'
+  const lastMoveClass = isLast ? 'saturate-85 ring-2 ring-amber-200/50' : ''
 
   return (
     <button
@@ -50,7 +50,7 @@ function BoardCell({ value, rowIndex, cellIndex, isLast, onClick }: CellProps) {
       }
       onClick={() => onClick(rowIndex, cellIndex)}
       disabled={value !== null}
-      className={`relative flex aspect-square min-w-0 items-center justify-center rounded-md border transition-[background,border-color,box-shadow,opacity,transform] duration-200 focus-visible:border-amber-300 focus-visible:ring-2 focus-visible:ring-amber-300/45 focus-visible:outline-none disabled:cursor-default ${cellStateClass} ${lastMoveClass}`}
+      className={`relative flex aspect-square min-w-0 items-center justify-center rounded-lg border transition-[background,border-color,box-shadow,opacity,transform] duration-200 focus-visible:border-amber-300 focus-visible:ring-2 focus-visible:ring-amber-300/45 focus-visible:outline-none disabled:cursor-default ${cellStateClass} ${lastMoveClass}`}
     >
       {isLast ? (
         <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-amber-200 shadow-[0_0_10px_rgba(253,230,138,0.75)]" />

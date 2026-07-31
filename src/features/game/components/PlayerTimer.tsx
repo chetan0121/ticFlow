@@ -26,11 +26,11 @@ interface PlayerTimerProps {
 function PlayerTimer({ mark, remainingTime, active, winner }: PlayerTimerProps) {
   const isWinner = winner === mark
   const stateClass =
-    active || isWinner ? PLAYER_TIMER_STYLES[mark] : 'border-white/10 bg-white/5 text-white/55'
+    active || isWinner ? PLAYER_TIMER_STYLES[mark] : 'border-white/10 bg-black/18 text-white/52'
 
   return (
     <div
-      className={`relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-md border px-3 py-2.5 transition-colors ${stateClass}`}
+      className={`relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-lg border px-3 py-2.5 transition-all duration-300 ${stateClass}`}
     >
       <span
         className={`absolute inset-y-2 left-0 w-1 rounded-r-full transition-opacity ${
@@ -39,9 +39,9 @@ function PlayerTimer({ mark, remainingTime, active, winner }: PlayerTimerProps) 
       />
       <div className="flex items-center gap-2">
         <span className="font-['Oswald'] text-2xl leading-none font-semibold">{mark}</span>
-        <Clock3 className="h-4 w-4 opacity-80" strokeWidth={2.3} />
+        <Clock3 className="hidden h-4 w-4 opacity-80 min-[360px]:block" strokeWidth={2.3} />
       </div>
-      <span className="font-['Montserrat'] text-base leading-none font-bold tabular-nums sm:text-lg">
+      <span className="font-['Montserrat'] text-sm leading-none font-bold tabular-nums min-[360px]:text-base sm:text-lg">
         {formatTime(remainingTime)}
       </span>
     </div>

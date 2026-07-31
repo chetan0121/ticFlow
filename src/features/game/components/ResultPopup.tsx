@@ -50,7 +50,7 @@ function GameResultPopup({ actions, open, winner }: GameResultPopupProps) {
       aria-modal="true"
       aria-labelledby="game-result-title"
     >
-      <div className="w-full max-w-110 overflow-hidden rounded-lg border border-white/14 bg-[hsl(26,34%,10%)] shadow-[0_26px_90px_rgba(0,0,0,0.58)]">
+      <div className="w-full max-w-105 overflow-hidden rounded-lg border border-white/14 bg-[hsl(26,34%,10%)] shadow-[0_26px_90px_rgba(0,0,0,0.58)]">
         <div className={`relative flex flex-col items-center gap-4 border-b px-6 py-7 ${tone}`}>
           <button
             type="button"
@@ -61,7 +61,7 @@ function GameResultPopup({ actions, open, winner }: GameResultPopupProps) {
             <X className="h-4 w-4" strokeWidth={2.4} />
           </button>
 
-          <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-current/30 bg-black/20">
+          <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-current/30 bg-black/20 shadow-[0_0_30px_currentColor] shadow-current/10">
             <Icon className="h-8 w-8" strokeWidth={2.15} />
           </div>
 

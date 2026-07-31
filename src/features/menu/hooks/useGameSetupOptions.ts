@@ -39,7 +39,7 @@ export function useGameSetupOptions(): GameSetupOptions[] {
       selection: {
         options: subModes,
         currentOption: subMode,
-        selectOption: setSubMode as (value: string) => unknown,
+        selectOption: setSubMode as (value: string) => void,
       },
     },
     {
