@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Circle, RotateCcw, X } from 'lucide-react'
+import { Circle, Pause, Play, RotateCcw, X } from 'lucide-react'
 import BoardGrid from '../../features/game/components/Grid'
+import LeaveGameConfirm from '../../features/game/components/LeaveGameConfirm'
 import GameResultPopup from '../../features/game/components/ResultPopup'
 import PlayerTimer from '../../features/game/components/PlayerTimer'
 import useBoard from '../../features/game/hooks/useBoard'
+import { useGameActive } from '../../features/game/hooks/useGameActive'
 import { useMenuContext } from '../../features/menu/hooks/useMenuContext'
 import { GAME_MODES, GAME_SUB_MODES } from '../../features/menu/constants'
 import AppRoutes from '../../router/AppRoutes'
@@ -50,19 +52,78 @@ function PlayerBadge({
   )
 }
 
+interface RestartConfirmProps {
+  onCancel: () => void
+  onConfirm: () => void
+  open: boolean
+}
+
+function RestartConfirm({ onCancel, onConfirm, open }: RestartConfirmProps) {
+  if (!open) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/58 px-5 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="restart-confirm-title"
+    >
+      <div className="w-full max-w-95 overflow-hidden rounded-lg border border-white/14 bg-[hsl(26,34%,10%)] shadow-[0_26px_90px_rgba(0,0,0,0.58)]">
+        <div className="border-b border-amber-100/14 px-5 py-5">
+          <p className="font-['Montserrat'] text-[10px] font-bold tracking-[0.2em] text-amber-100/60 uppercase">
+            Restart game
+          </p>
+          <h2
+            id="restart-confirm-title"
+            className="mt-1 font-['Oswald'] text-3xl leading-none font-semibold text-white"
+          >
+            Start this game over?
+          </h2>
+          <p className="mt-3 text-sm leading-5 text-white/58">
+            Current moves and timers will reset.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 px-5 py-5">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex h-11 items-center justify-center rounded-md border border-white/12 bg-white/6 px-3 font-['Montserrat'] text-sm font-semibold text-white/78 transition-colors hover:border-white/24 hover:bg-white/11 hover:text-white focus-visible:ring-2 focus-visible:ring-amber-200/45 focus-visible:outline-none"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex h-11 items-center justify-center gap-2 rounded-md border border-amber-200/35 bg-amber-300/12 px-3 font-['Montserrat'] text-sm font-semibold text-amber-100 transition-colors hover:border-amber-100/55 hover:bg-amber-300/18 focus-visible:ring-2 focus-visible:ring-amber-200/55 focus-visible:outline-none"
+          >
+            <RotateCcw className="h-4 w-4" strokeWidth={2.35} />
+            Restart
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function GameBoard() {
   const {
     board,
     currentTurn,
     isLastMove,
     onCellClick,
+    pause,
     players,
     replay,
+    resume,
     status,
     timeLimit,
     winner,
   } = useBoard()
   const [showResultPopup, setShowResultPopup] = useState(false)
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false)
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
+  const [, setGameActive] = useGameActive()
   const navigate = useNavigate()
   const {
     state: { coreMode, subMode },
@@ -81,14 +142,66 @@ function GameBoard() {
     }
   }, [status, winner])
 
+  const shouldConfirmLeave = (status === 'playing' || status === 'paused') && winner === null
+
+  useEffect(() => {
+    setGameActive(shouldConfirmLeave)
+
+    return () => setGameActive(false)
+  }, [setGameActive, shouldConfirmLeave])
+
+  useEffect(() => {
+    if (!shouldConfirmLeave) return
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [shouldConfirmLeave])
+
   function handleBackToMenu() {
+    if (shouldConfirmLeave) {
+      setShowLeaveConfirm(true)
+      return
+    }
+
+    void navigate(AppRoutes.gameMenu.path)
+  }
+
+  function leaveToMenu() {
+    setShowLeaveConfirm(false)
     void navigate(AppRoutes.gameMenu.path)
   }
 
   function handleReplay() {
     replay()
     setShowResultPopup(false)
+    setShowRestartConfirm(false)
   }
+
+  function handleRestartRequest() {
+    if ((status === 'playing' || status === 'paused') && winner === null) {
+      setShowRestartConfirm(true)
+      return
+    }
+
+    handleReplay()
+  }
+
+  function handlePauseToggle() {
+    if (status === 'playing') {
+      pause()
+    } else if (status === 'paused') {
+      resume()
+    }
+  }
+
+  const isPaused = status === 'paused'
+  const isGameActive = status === 'playing'
+  const canPause = (status === 'playing' || status === 'paused') && winner === null
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col items-center justify-center px-0 py-3 sm:py-5">
@@ -105,7 +218,21 @@ function GameBoard() {
           <div className="flex shrink-0 items-center">
             <button
               type="button"
-              onClick={handleReplay}
+              onClick={handlePauseToggle}
+              disabled={!canPause}
+              className="group mr-2 flex h-11 items-center justify-center gap-2 rounded-lg border border-white/12 bg-black/18 px-3 font-['Montserrat'] text-xs font-bold text-white/72 transition-colors hover:border-cyan-200/35 hover:bg-cyan-200/10 hover:text-cyan-100 focus-visible:ring-2 focus-visible:ring-cyan-200/45 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label={isPaused ? 'Resume game' : 'Pause game'}
+            >
+              {isPaused ? (
+                <Play className="h-4 w-4" fill="currentColor" strokeWidth={2.4} />
+              ) : (
+                <Pause className="h-4 w-4" fill="currentColor" strokeWidth={2.4} />
+              )}
+              <span className="hidden min-[430px]:inline">{isPaused ? 'Resume' : 'Pause'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleRestartRequest}
               className="group flex h-11 items-center justify-center gap-2 rounded-lg border border-white/12 bg-black/18 px-3 font-['Montserrat'] text-xs font-bold text-white/72 transition-colors hover:border-amber-200/35 hover:bg-amber-200/10 hover:text-amber-100 focus-visible:ring-2 focus-visible:ring-amber-200/45 focus-visible:outline-none"
               aria-label="Restart same game"
             >
@@ -113,7 +240,7 @@ function GameBoard() {
                 className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-45"
                 strokeWidth={2.4}
               />
-              <span className="hidden min-[430px]:inline">Restart</span>
+              <span className="hidden min-[430px]:inline">{winner ? 'Replay' : 'Restart'}</span>
             </button>
           </div>
         </div>
@@ -124,13 +251,13 @@ function GameBoard() {
               <PlayerTimer
                 mark="O"
                 remainingTime={players.O.remainingTime}
-                active={currentTurn === 'O' && !winner}
+                active={currentTurn === 'O' && isGameActive && !winner}
                 winner={winner}
               />
               <PlayerTimer
                 mark="X"
                 remainingTime={players.X.remainingTime}
-                active={currentTurn === 'X' && !winner}
+                active={currentTurn === 'X' && isGameActive && !winner}
                 winner={winner}
               />
             </>
@@ -138,12 +265,12 @@ function GameBoard() {
             <>
               <PlayerBadge
                 mark="O"
-                active={currentTurn === 'O' && !winner}
+                active={currentTurn === 'O' && isGameActive && !winner}
                 won={winner === 'O'}
               />
               <PlayerBadge
                 mark="X"
-                active={currentTurn === 'X' && !winner}
+                active={currentTurn === 'X' && isGameActive && !winner}
                 won={winner === 'X'}
               />
             </>
@@ -151,9 +278,31 @@ function GameBoard() {
         </div>
       </div>
 
-      <div className="mt-3 w-full sm:mt-4">
+      <div className="relative mx-auto mt-3 w-full max-w-[min(92vw,58vh,38rem)] sm:mt-4">
         <BoardGrid board={board} isLast={isLastMove} onCellClick={onCellClick} />
+        {isPaused ? (
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/30 backdrop-blur-[1px]">
+            <div className="rounded-lg border border-cyan-200/24 bg-black/55 px-4 py-3 text-center shadow-[0_18px_50px_rgba(0,0,0,0.42)]">
+              <p className="font-['Montserrat'] text-[10px] font-bold tracking-[0.22em] text-cyan-100/65 uppercase">
+                Paused
+              </p>
+              <p className="mt-1 font-['Oswald'] text-2xl leading-none text-white">
+                Game paused
+              </p>
+            </div>
+          </div>
+        ) : null}
       </div>
+      <RestartConfirm
+        open={showRestartConfirm}
+        onCancel={() => setShowRestartConfirm(false)}
+        onConfirm={handleReplay}
+      />
+      <LeaveGameConfirm
+        open={showLeaveConfirm}
+        onCancel={() => setShowLeaveConfirm(false)}
+        onConfirm={leaveToMenu}
+      />
       <GameResultPopup
         actions={{
           back: handleBackToMenu,

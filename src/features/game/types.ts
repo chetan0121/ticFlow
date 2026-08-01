@@ -51,8 +51,10 @@ export interface BoardHookResult {
   currentTurn: PlayerMark
   isLastMove: (rowIndex: number, cellIndex: number) => boolean
   onCellClick: GameCellClickHandler
+  pause: () => void
   players: BoardPlayers
   replay: () => void
+  resume: () => void
   status: GameStatus
   timeLimit: RangeValue
   winner: WinState
