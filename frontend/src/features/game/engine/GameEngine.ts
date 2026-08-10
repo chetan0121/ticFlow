@@ -6,26 +6,34 @@ export class Engine {
 
   static nextMove(game: GameState, nextMove: Move, config: GameConfig): GameState | null {
     const board = game.baseGame.board
+    const boardSize = board.length
+    const boardWidth = board[0]?.length ?? 0
 
-    if (board.length === 0 || board.length !== board[0].length) return null
-    if (nextMove[0] >= board.length || nextMove[1] >= board[0].length) return null
+    if (boardSize === 0 || boardSize !== boardWidth) return null
     if (nextMove[0] < 0 || nextMove[1] < 0) return null
-    if (board[nextMove[0]][nextMove[1]] !== null) return null
+    if (nextMove[0] >= boardSize || nextMove[1] >= boardWidth) return null
+    if (board[nextMove[0]]?.[nextMove[1]] !== null) return null
     if (game.status !== 'playing') return null
 
     const currGame = cloneGameState(game)
     const currBoard = currGame.baseGame.board
     const currSign = currGame.baseGame.currentTurn
     const currPlayer = currSign === 'O' ? currGame.playerO : currGame.playerX
+    const targetRow = currBoard[nextMove[0]]
+
+    if (!targetRow) return null
 
     // Add sign
-    currBoard[nextMove[0]][nextMove[1]] = currSign
+    targetRow[nextMove[1]] = currSign
     currPlayer.moves.push(nextMove)
 
     // Remove old sign
     if (currPlayer.moves.length > currBoard.length) {
-      const lastMove = currPlayer.moves.shift() as Move
-      currBoard[lastMove[0]][lastMove[1]] = null
+      const lastMove = currPlayer.moves.shift()
+      if (!lastMove) return null
+
+      const prevRow = currBoard[lastMove[0]]
+      if (prevRow) prevRow[lastMove[1]] = null
     }
 
     // Check if winning
@@ -54,7 +62,15 @@ export class Engine {
 
     // Check rows
     for (let i = 1; i < n; i++) {
-      if (currMoves[i - 1][0] !== currMoves[i][0]) {
+      const previousMove = currMoves[i - 1]
+      const currentMove = currMoves[i]
+
+      if (!previousMove || !currentMove) {
+        won = false
+        break
+      }
+
+      if (previousMove[0] !== currentMove[0]) {
         won = false
         break
       }
@@ -65,7 +81,15 @@ export class Engine {
 
     // Check cols
     for (let i = 1; i < n; i++) {
-      if (currMoves[i - 1][1] !== currMoves[i][1]) {
+      const previousMove = currMoves[i - 1]
+      const currentMove = currMoves[i]
+
+      if (!previousMove || !currentMove) {
+        won = false
+        break
+      }
+
+      if (previousMove[1] !== currentMove[1]) {
         won = false
         break
       }

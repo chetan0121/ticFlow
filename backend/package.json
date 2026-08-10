@@ -1,0 +1,16 @@
+{
+  "name": "@ticflow/backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/server.ts",
+    "format": "prettier --write \"**/*.{ts,js,json,md}\" --ignore-path ../.gitignore",
+    "lint": "eslint . --max-warnings 0",
+    "ts-check": "tsc -b --noEmit",
+    "build": "tsc -b",
+    "release": "prettier --write \"**/*.{ts,js,json,md}\" --ignore-path ../.gitignore && eslint . && tsc -b",
+    "preview": "bun dist/server.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

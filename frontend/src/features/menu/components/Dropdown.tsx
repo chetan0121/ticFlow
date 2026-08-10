@@ -218,7 +218,9 @@ function MenuDropdown({ selection, text }: DropDownOptions) {
       buttonRef.current?.focus()
     } else if (event.key === 'Enter') {
       event.preventDefault()
-      chooseOption(options[index].value)
+      const option = options[index]
+      if (!option) return
+      chooseOption(option.value)
     }
   }
 

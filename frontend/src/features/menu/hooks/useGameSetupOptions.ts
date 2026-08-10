@@ -4,6 +4,7 @@ import {
   GAME_TIME_CONTROLS,
   GAME_MOVE_LIMITS,
   type CoreModes,
+  type SubModes,
 } from '../constants'
 import type { GameSetupOptions } from '../types'
 import { useMenuContext } from './useMenuContext'
@@ -19,8 +20,10 @@ export function useGameSetupOptions(): GameSetupOptions[] {
 
   const selectCoreMode = (value: string) => {
     const nextCoreMode = value as CoreModes
+    const nextSubMode = GAME_SUB_MODES(nextCoreMode).modes[0]?.value ?? 'flocal'
+
     setCoreMode(nextCoreMode)
-    setSubMode(GAME_SUB_MODES(nextCoreMode).modes[0].value)
+    setSubMode(nextSubMode as SubModes)
   }
 
   return [

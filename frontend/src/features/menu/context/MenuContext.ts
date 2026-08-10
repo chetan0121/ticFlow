@@ -10,8 +10,8 @@ import {
 } from '../constants'
 
 // Default Menu values (Add new Menu state here)
-const defaultCoreMode = GAME_MODES().modes[0].value
-const defaultSubMode = GAME_SUB_MODES(defaultCoreMode).modes[0].value
+const defaultCoreMode = GAME_MODES().modes[0]?.value ?? 'friend'
+const defaultSubMode = GAME_SUB_MODES(defaultCoreMode).modes[0]?.value ?? 'flocal'
 
 export interface MenuStateType {
   coreMode: CoreModes

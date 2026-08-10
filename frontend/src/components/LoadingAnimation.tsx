@@ -27,6 +27,7 @@ export default function LoadingAnimation({
     }
 
     const currentMessage = messages[currentIndex]
+    if (!currentMessage) return
     if (currentMessage.keepTime <= 0) return
 
     const timer = setTimeout(() => {
