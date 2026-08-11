@@ -17,6 +17,8 @@ import { createAuthToken, verifyAuthToken } from './jwt.js'
 import { hashPassword, verifyPassword } from './password.js'
 import type { LoginRequest, SignupRequest } from './auth.types.js'
 
+const MAX_ACTIVE_SESSIONS = 3
+
 export interface AuthSessionResult {
   cookieName: string
   maxAgeSeconds: number
@@ -65,6 +67,20 @@ async function createSession(user: UserDocument): Promise<AuthSessionResult> {
     expiresAt,
     absoluteExpiresAt,
   })
+
+  const activeSessions = await sessions
+    .find({ userId: user._id })
+    .sort({ createdAt: -1 })
+    .project<{ _id: ObjectId }>({ _id: 1 })
+    .toArray()
+  const oldSessionIds = activeSessions
+    .slice(MAX_ACTIVE_SESSIONS)
+    .map(activeSession => activeSession._id)
+
+  if (oldSessionIds.length > 0) {
+    await sessions.deleteMany({ _id: { $in: oldSessionIds } })
+  }
+
   const token = createToken(session.insertedId, user._id, expiresAt)
 
   return {

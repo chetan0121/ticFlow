@@ -32,9 +32,20 @@ function readBooleanEnv(name: string, defaultValue: boolean): boolean {
   return value === 'true'
 }
 
+function readListEnv(name: string): string[] {
+  const value = process.env[name]
+
+  if (!value) return []
+
+  return value
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean)
+}
+
 export const env = {
   port: readPort(),
-  frontendOrigin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173',
+  frontendOrigins: Array.from(new Set(readListEnv('FRONTEND_ORIGINS'))),
   dnsServers: process.env.DNS_SERVERS?.split(',')
     .map(server => server.trim())
     .filter(Boolean) ?? ['1.1.1.1', '1.0.0.1'],

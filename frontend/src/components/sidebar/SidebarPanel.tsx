@@ -1,8 +1,9 @@
 import type { RefObject } from 'react'
-import { Grid3X3, SidebarClose } from 'lucide-react'
+import { Grid3X3, LogIn, LogOut, SidebarClose, UserRound } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import SidebarNavigation from './SidebarNavigation'
 import AppRoutes from '../../router/AppRoutes'
+import { useAuth } from '../../features/auth/hooks/useAuth'
 
 interface SidebarPanelProps {
   panelRef: RefObject<HTMLDivElement | null>
@@ -11,13 +12,23 @@ interface SidebarPanelProps {
 }
 
 const BrandText = 'TicFlow'
-const BottomLine = 'Classic strategy, clean moves.'
 
 function SidebarPanel({ panelRef, isOpen, onClose }: SidebarPanelProps) {
   const navigate = useNavigate()
+  const { isLoading, logout, user } = useAuth()
 
   const goHome = () => {
     void navigate(AppRoutes.home.path)
+    onClose()
+  }
+
+  const goAuth = () => {
+    void navigate(AppRoutes.auth.path)
+    onClose()
+  }
+
+  const logoutUser = () => {
+    void logout()
     onClose()
   }
 
@@ -69,8 +80,39 @@ function SidebarPanel({ panelRef, isOpen, onClose }: SidebarPanelProps) {
 
         <SidebarNavigation />
 
-        <div className="mt-auto border-t border-white/10 px-4 py-4 font-['Montserrat'] text-xs text-white/35">
-          {BottomLine}
+        <div className="mt-auto border-t border-white/10 p-4 font-['Montserrat']">
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[hsl(38,95%,62%)]/30 bg-[hsl(38,95%,54%)]/14 text-[hsl(38,95%,68%)]">
+                <UserRound size={18} strokeWidth={2.4} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-bold text-white">
+                  {user.username}
+                </span>
+                <span className="block truncate text-xs text-white/42">{user.email}</span>
+              </span>
+              <button
+                type="button"
+                onClick={logoutUser}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/4 text-white/58 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label="Logout"
+                title="Logout"
+              >
+                <LogOut size={16} strokeWidth={2.4} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={goAuth}
+              disabled={isLoading}
+              className="flex h-11 w-full items-center justify-between rounded-md border border-white/10 bg-white/4 px-3 text-sm font-bold text-white/78 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-55"
+            >
+              <span>{isLoading ? 'Checking account' : 'Login or signup'}</span>
+              <LogIn size={17} strokeWidth={2.4} />
+            </button>
+          )}
         </div>
       </div>
     </>

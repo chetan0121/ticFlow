@@ -8,8 +8,9 @@ import { healthRoutes } from './modules/health/health.routes.js'
 const routes: Route[] = [...healthRoutes, ...authRoutes]
 
 export async function handleRequest(request: IncomingMessage, response: ServerResponse) {
+  setCorsHeaders(response, request.headers.origin)
+
   if (request.method === 'OPTIONS') {
-    setCorsHeaders(response)
     response.writeHead(204)
     response.end()
     return

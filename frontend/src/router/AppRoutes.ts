@@ -6,6 +6,7 @@ const GameBoard = lazy(() => import('../pages/game/GameBoard'))
 const LoadingScreen = lazy(() => import('../pages/main/LoadingScreen'))
 const NotFoundPage = lazy(() => import('../pages/main/NotFound'))
 const GameMenu = lazy(() => import('../pages/game/GameMenu'))
+const AuthPage = lazy(() => import('../pages/main/AuthPage'))
 
 // Mapping routes
 const AppRoutes = {
@@ -24,6 +25,10 @@ const AppRoutes = {
   gameMenu: {
     path: '/gamesetup',
     page: GameMenu,
+  },
+  auth: {
+    path: '/auth',
+    page: AuthPage,
   },
   notFound: {
     path: '*',
