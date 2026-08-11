@@ -11,6 +11,8 @@
     "release": "prettier --write \"**/*.{ts,js,json,md}\" --ignore-path ../.gitignore && eslint . && tsc -b",
     "preview": "bun dist/server.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "mongodb": "^6.20.0"
+  },
   "devDependencies": {}
 }
