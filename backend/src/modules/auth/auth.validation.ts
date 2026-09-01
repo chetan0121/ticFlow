@@ -1,10 +1,12 @@
 import { HttpError } from '../../http/errors.js'
 import type { LoginRequest, SignupRequest } from './auth.types.js'
 
+type RequestBody = Record<string, unknown>
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,24}$/
 
-function readStringField(input: Record<string, unknown>, field: string) {
+function readStringField(input: RequestBody, field: string) {
   const value = input[field]
 
   if (typeof value !== 'string') {
@@ -14,17 +16,17 @@ function readStringField(input: Record<string, unknown>, field: string) {
   return value.trim()
 }
 
-function assertObject(input: unknown): Record<string, unknown> {
+function assertObject(input: unknown): RequestBody {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new HttpError(400, 'Invalid request body')
   }
 
-  return input as Record<string, unknown>
+  return input as RequestBody
 }
 
 export function validateSignup(input: unknown): SignupRequest {
   const body = assertObject(input)
-  const username = readStringField(body, 'username')
+  const username = readStringField(body, 'username').toLowerCase()
   const email = readStringField(body, 'email').toLowerCase()
   const password = readStringField(body, 'password')
 
@@ -45,12 +47,12 @@ export function validateSignup(input: unknown): SignupRequest {
 
 export function validateLogin(input: unknown): LoginRequest {
   const body = assertObject(input)
-  const email = readStringField(body, 'email').toLowerCase()
+  const identifier = readStringField(body, 'identifier').toLowerCase()
   const password = readStringField(body, 'password')
 
-  if (!EMAIL_PATTERN.test(email)) {
-    throw new HttpError(400, 'Email is invalid')
+  if (!EMAIL_PATTERN.test(identifier) && !USERNAME_PATTERN.test(identifier)) {
+    throw new HttpError(400, 'Email or username is invalid')
   }
 
-  return { email, password }
+  return { identifier, password }
 }

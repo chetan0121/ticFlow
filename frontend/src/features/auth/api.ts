@@ -28,10 +28,10 @@ export function signup(username: string, email: string, password: string) {
   })
 }
 
-export function login(email: string, password: string) {
+export function login(identifier: string, password: string) {
   return requestAuth('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ identifier, password }),
   })
 }
 

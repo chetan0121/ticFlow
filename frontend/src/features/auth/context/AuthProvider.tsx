@@ -36,8 +36,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     () => ({
       isLoading,
       user,
-      login: async (email: string, password: string) => {
-        const response = await authApi.login(email, password)
+      login: async (identifier: string, password: string) => {
+        const response = await authApi.login(identifier, password)
         setUser(response.user)
       },
       signup: async (username: string, email: string, password: string) => {

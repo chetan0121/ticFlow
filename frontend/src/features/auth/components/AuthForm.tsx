@@ -126,22 +126,24 @@ function AuthForm() {
                     maxLength={24}
                     autoComplete="username"
                     className="h-12 w-full rounded-md border border-white/12 bg-black/24 px-4 text-white transition-colors outline-none placeholder:text-white/28 focus:border-[hsl(38,95%,62%)]"
-                    placeholder="chetan"
+                    placeholder="Username"
                   />
                 </label>
               </div>
             </div>
 
             <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-white/72">Email</span>
+              <span className="mb-2 block text-sm font-semibold text-white/72">
+                {isSignup ? 'Email' : 'Email or username'}
+              </span>
               <input
                 value={email}
                 onChange={event => setEmail(event.target.value)}
                 required
-                type="email"
-                autoComplete="email"
+                type={isSignup ? 'email' : 'text'}
+                autoComplete={isSignup ? 'email' : 'username'}
                 className="h-12 w-full rounded-md border border-white/12 bg-black/24 px-4 text-white transition-colors outline-none placeholder:text-white/28 focus:border-[hsl(38,95%,62%)]"
-                placeholder="you@example.com"
+                placeholder={isSignup ? 'you@example.com' : 'you@example.com or Username'}
               />
             </label>
 

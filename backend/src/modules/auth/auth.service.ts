@@ -73,6 +73,7 @@ async function createSession(user: UserDocument): Promise<AuthSessionResult> {
     .sort({ createdAt: -1 })
     .project<{ _id: ObjectId }>({ _id: 1 })
     .toArray()
+
   const oldSessionIds = activeSessions
     .slice(MAX_ACTIVE_SESSIONS)
     .map(activeSession => activeSession._id)
@@ -119,7 +120,9 @@ export async function signup(input: SignupRequest): Promise<AuthSessionResult> {
 
 export async function login(input: LoginRequest): Promise<AuthSessionResult> {
   const users = await getUserCollection()
-  const user = await users.findOne({ email: input.email })
+  const user = await users.findOne({
+    $or: [{ email: input.identifier }, { username: input.identifier }],
+  })
 
   if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
     throw new HttpError(401, 'Invalid email or password')
