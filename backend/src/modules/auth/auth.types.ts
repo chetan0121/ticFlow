@@ -11,13 +11,14 @@ export interface LoginRequest {
   password: string
 }
 
-export interface AuthResponse {
-  user: PublicUser
-}
-
 export interface AuthTokenPayload {
   sessionId: string
   userId: string
-  iat: number
-  exp: number
+}
+
+export interface AuthSessionResult {
+  cookieMaxAgeMs: number
+  refreshed: boolean
+  token: string
+  user: PublicUser
 }

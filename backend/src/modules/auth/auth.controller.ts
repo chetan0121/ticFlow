@@ -1,61 +1,42 @@
-import type { IncomingMessage, ServerResponse } from 'node:http'
+import type { Request, Response } from 'express'
 
 import { AUTH_COOKIE_NAME } from '../../config/constants.js'
-import { readJsonBody } from '../../http/body.js'
-import { clearCookie, getCookie, setCookie } from '../../http/cookies.js'
-import { HttpError } from '../../http/errors.js'
-import { sendJson } from '../../http/json.js'
-import {
-  getCurrentUser,
-  login,
-  logout,
-  signup,
-  type AuthSessionResult,
-} from './auth.service.js'
+import type { AuthenticatedLocals } from '../../middleware/authenticate.js'
+import { clearAuthCookie, setAuthCookie } from './cookies.js'
+import { login, logout, signup } from './auth.service.js'
+import type { AuthSessionResult } from './auth.types.js'
 import { validateLogin, validateSignup } from './auth.validation.js'
 
-function sendAuthSession(
-  response: ServerResponse,
-  result: AuthSessionResult,
-  statusCode = 200
-) {
-  setCookie(response, result.cookieName, result.token, result.maxAgeSeconds)
-  sendJson(response, statusCode, { user: result.user })
+function sendAuthSession(response: Response, result: AuthSessionResult, statusCode = 200) {
+  setAuthCookie(response, result.token, result.cookieMaxAgeMs)
+  response.status(statusCode).json({ user: result.user })
 }
 
-export async function handleSignup(request: IncomingMessage, response: ServerResponse) {
-  const body = await readJsonBody(request)
-  const result = await signup(validateSignup(body))
+export async function handleSignup(request: Request, response: Response) {
+  const result = await signup(validateSignup(request.body))
 
   sendAuthSession(response, result, 201)
 }
 
-export async function handleLogin(request: IncomingMessage, response: ServerResponse) {
-  const body = await readJsonBody(request)
-  const result = await login(validateLogin(body))
+export async function handleLogin(request: Request, response: Response) {
+  const result = await login(validateLogin(request.body))
 
   sendAuthSession(response, result)
 }
 
-export async function handleMe(request: IncomingMessage, response: ServerResponse) {
-  const token = getCookie(request, AUTH_COOKIE_NAME)
+export function handleMe(_request: Request, response: Response<unknown, AuthenticatedLocals>) {
+  const result = response.locals.auth
 
-  if (!token) {
-    throw new HttpError(401, 'Unauthorized')
-  }
-
-  const result = await getCurrentUser(token)
-
-  sendAuthSession(response, result)
+  response.status(200).json({ user: result.user })
 }
 
-export async function handleLogout(request: IncomingMessage, response: ServerResponse) {
+export async function handleLogout(request: Request, response: Response) {
   try {
-    await logout(getCookie(request, AUTH_COOKIE_NAME))
+    await logout(request.cookies[AUTH_COOKIE_NAME] as string | undefined)
   } catch {
-    // Logout should still clear a stale or malformed cookie.
+    // Logout should still clear a stale, expired, or malformed client cookie.
   }
 
-  clearCookie(response, AUTH_COOKIE_NAME)
-  sendJson(response, 200, { status: 'ok' })
+  clearAuthCookie(response)
+  response.status(200).json({ status: 'ok' })
 }

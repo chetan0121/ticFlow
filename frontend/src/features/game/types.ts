@@ -1,61 +1,64 @@
-import type { RangeValue } from '../menu/constants'
-import type { SubModes } from '../menu/constants'
+import type { RangeValue } from "../menu/constants";
+import type { SubModes } from "../menu/constants";
 
-export type PlayerMark = 'O' | 'X'
+export type PlayerMark = "O" | "X";
 
-export type Move = [number, number]
+export type Move = [number, number];
 
-export type CellValue = PlayerMark | null
+export type CellValue = PlayerMark | null;
 
-export type BoardState = CellValue[][]
+export type BoardState = CellValue[][];
 
-export type GameCellClickHandler = (rowIndex: number, cellIndex: number) => void
+export type GameCellClickHandler = (
+  rowIndex: number,
+  cellIndex: number,
+) => void;
 
-export type WinState = PlayerMark | 'draw' | null
+export type WinState = PlayerMark | "draw" | null;
 
-export type GameStatus = 'waiting' | 'playing' | 'paused' | 'finished'
+export type GameStatus = "waiting" | "playing" | "paused" | "finished";
 
 export interface BaseGameState {
-  board: BoardState
-  currentTurn: PlayerMark
-  moveCount: number
+  board: BoardState;
+  currentTurn: PlayerMark;
+  moveCount: number;
 }
 
 export interface Player {
-  userId: string
-  remainingTime: RangeValue
-  moves: Move[]
+  userId: string;
+  remainingTime: RangeValue;
+  moves: Move[];
 }
 
 export interface GameState {
-  baseGame: BaseGameState
-  playerO: Player
-  playerX: Player
-  status: GameStatus
-  winner: WinState
+  baseGame: BaseGameState;
+  playerO: Player;
+  playerX: Player;
+  status: GameStatus;
+  winner: WinState;
 }
 
 export interface GameConfig {
-  subMode: SubModes
-  timeLimit: RangeValue
-  moveLimit: RangeValue
+  subMode: SubModes;
+  timeLimit: RangeValue;
+  moveLimit: RangeValue;
 }
 
 export interface BoardPlayers {
-  O: Player
-  X: Player
+  O: Player;
+  X: Player;
 }
 
 export interface BoardHookResult {
-  board: BoardState
-  currentTurn: PlayerMark
-  isLastMove: (rowIndex: number, cellIndex: number) => boolean
-  onCellClick: GameCellClickHandler
-  pause: () => void
-  players: BoardPlayers
-  replay: () => void
-  resume: () => void
-  status: GameStatus
-  timeLimit: RangeValue
-  winner: WinState
+  board: BoardState;
+  currentTurn: PlayerMark;
+  isLastMove: (rowIndex: number, cellIndex: number) => boolean;
+  onCellClick: GameCellClickHandler;
+  pause: () => void;
+  players: BoardPlayers;
+  replay: () => void;
+  resume: () => void;
+  status: GameStatus;
+  timeLimit: RangeValue;
+  winner: WinState;
 }

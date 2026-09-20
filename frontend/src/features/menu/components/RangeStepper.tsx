@@ -1,108 +1,108 @@
-import { useEffect, useState } from 'react'
-import type { FocusEvent, KeyboardEvent } from 'react'
-import { Minus, Plus } from 'lucide-react'
-import type { RangeOptions } from '../types'
-import BaseOption from './BaseOption'
+import { useEffect, useState } from "react";
+import type { FocusEvent, KeyboardEvent } from "react";
+import { Minus, Plus } from "lucide-react";
+import type { RangeOptions } from "../types";
+import BaseOption from "./BaseOption";
 
-type inputType = number | string | null
+type inputType = number | string | null;
 
 const clampValue = (value: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, value))
+  Math.min(max, Math.max(min, value));
 
 const parseInt = (value: string): number | null => {
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  const parsed = Number(trimmed)
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
 
-  if (Number.isNaN(parsed)) return null
+  if (Number.isNaN(parsed)) return null;
 
-  const rounded = Math.round(parsed)
-  if (!Number.isSafeInteger(rounded)) return null
+  const rounded = Math.round(parsed);
+  if (!Number.isSafeInteger(rounded)) return null;
 
-  return rounded
-}
+  return rounded;
+};
 
 function RangeStepper({ range, text }: RangeOptions) {
-  const { min, max, value, step, setValue } = range
-  const safeStep = step < 0 ? 1 : step
-  const [inputValue, setInputValue] = useState<inputType>(value)
+  const { min, max, value, step, setValue } = range;
+  const safeStep = step < 0 ? 1 : step;
+  const [inputValue, setInputValue] = useState<inputType>(value);
 
   // Auto Sync inpuValue to actual state 'value'
   useEffect(() => {
-    if (typeof inputValue !== 'string') {
-      setValue(inputValue)
+    if (typeof inputValue !== "string") {
+      setValue(inputValue);
     }
-  }, [inputValue, setValue])
+  }, [inputValue, setValue]);
 
   // Make input in range and synced to steps
   const refineInput = (numVal: number) => {
-    let refinedInput = Math.round(numVal / safeStep) * safeStep
-    refinedInput = clampValue(refinedInput, min, max)
-    return refinedInput
-  }
+    let refinedInput = Math.round(numVal / safeStep) * safeStep;
+    refinedInput = clampValue(refinedInput, min, max);
+    return refinedInput;
+  };
 
   const decrement = () => {
-    let finalVal = inputValue
-    if (typeof finalVal === 'string') {
-      finalVal = parseInt(finalVal)
+    let finalVal = inputValue;
+    if (typeof finalVal === "string") {
+      finalVal = parseInt(finalVal);
     }
 
     if (finalVal === null) {
-      setInputValue(min)
-      return
+      setInputValue(min);
+      return;
     }
 
-    finalVal -= safeStep
-    setInputValue(refineInput(finalVal))
-  }
+    finalVal -= safeStep;
+    setInputValue(refineInput(finalVal));
+  };
 
   const increment = () => {
-    let finalVal = inputValue
-    if (typeof finalVal === 'string') {
-      finalVal = parseInt(finalVal)
+    let finalVal = inputValue;
+    if (typeof finalVal === "string") {
+      finalVal = parseInt(finalVal);
     }
 
     if (finalVal === null || finalVal === max) {
-      setInputValue(null)
-      return
+      setInputValue(null);
+      return;
     }
 
-    finalVal += safeStep
-    setInputValue(refineInput(finalVal))
-  }
+    finalVal += safeStep;
+    setInputValue(refineInput(finalVal));
+  };
 
   // Trigger when out of focus from an elem
   const handleBlur = () => {
-    if (typeof inputValue !== 'string') return
+    if (typeof inputValue !== "string") return;
 
-    const numVal = parseInt(inputValue)
+    const numVal = parseInt(inputValue);
     if (numVal === null) {
-      setInputValue(null)
-      return
+      setInputValue(null);
+      return;
     }
 
-    setInputValue(refineInput(numVal))
-  }
+    setInputValue(refineInput(numVal));
+  };
 
   const handleFocus = (event: FocusEvent<HTMLInputElement>) => {
     if (inputValue === null) {
-      event.currentTarget.select()
+      event.currentTarget.select();
     }
-  }
+  };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      event.stopPropagation()
-      event.currentTarget.blur()
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      increment()
-    } else if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      decrement()
+    if (event.key === "Enter") {
+      event.preventDefault();
+      event.stopPropagation();
+      event.currentTarget.blur();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      increment();
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      decrement();
     }
-  }
+  };
 
   return (
     <BaseOption text={text}>
@@ -120,10 +120,10 @@ function RangeStepper({ range, text }: RangeOptions) {
         <div className="relative flex-3">
           <input
             type="text"
-            value={inputValue ?? 'Infinite'}
+            value={inputValue ?? "Infinite"}
             min={min}
             max={max}
-            onChange={event => setInputValue(event.target.value)}
+            onChange={(event) => setInputValue(event.target.value)}
             onBlur={handleBlur}
             onFocus={handleFocus}
             onKeyDown={handleKeyDown}
@@ -142,7 +142,7 @@ function RangeStepper({ range, text }: RangeOptions) {
         </button>
       </div>
     </BaseOption>
-  )
+  );
 }
 
-export default RangeStepper
+export default RangeStepper;

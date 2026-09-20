@@ -1,31 +1,32 @@
-import { useMemo } from 'react'
-import { useMenuContext } from '../../menu/hooks/useMenuContext'
-import type { SubModes } from '../../menu/constants'
-import type { BoardHookResult, GameConfig } from '../types'
-import { useFLocalBoard } from '../submodes/flocal'
+import { useMemo } from "react";
+import { useMenuContext } from "../../menu/hooks/useMenuContext";
+import type { SubModes } from "../../menu/constants";
+import type { BoardHookResult, GameConfig } from "../types";
+import { useFLocalBoard } from "../submodes/flocal";
 
-type BoardSubModeHook = (config: GameConfig) => BoardHookResult
+type BoardSubModeHook = (config: GameConfig) => BoardHookResult;
 
 const BOARD_SUB_MODE_HOOKS: Partial<Record<SubModes, BoardSubModeHook>> = {
   flocal: useFLocalBoard,
-}
+};
 
 function useBoard(): BoardHookResult {
-  const { state } = useMenuContext()
+  const { state } = useMenuContext();
   const config = useMemo<GameConfig>(
     () => ({
       subMode: state.subMode,
       timeLimit: state.timeControl,
       moveLimit: state.moveLimit,
     }),
-    [state.moveLimit, state.subMode, state.timeControl]
-  )
+    [state.moveLimit, state.subMode, state.timeControl],
+  );
 
-  const useSubModeBoard = BOARD_SUB_MODE_HOOKS[state.subMode]
+  const useSubModeBoard = BOARD_SUB_MODE_HOOKS[state.subMode];
 
-  if (!useSubModeBoard) throw new Error(`Unsupported game submode: ${state.subMode}`)
+  if (!useSubModeBoard)
+    throw new Error(`Unsupported game submode: ${state.subMode}`);
 
-  return useSubModeBoard(config)
+  return useSubModeBoard(config);
 }
 
-export default useBoard
+export default useBoard;

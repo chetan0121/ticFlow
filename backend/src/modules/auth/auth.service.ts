@@ -1,55 +1,40 @@
-import { ObjectId } from 'mongodb'
+import { MongoServerError, ObjectId } from 'mongodb'
 
 import {
-  AUTH_COOKIE_NAME,
-  SESSION_ABSOLUTE_TTL_MS,
-  SESSION_TTL_MS,
+  MAX_ACTIVE_SESSIONS,
+  SESSION_HARD_TTL_MS,
+  SESSION_SOFT_TTL_MS,
 } from '../../config/constants.js'
-import { getSessionCollection } from '../../db/models/session.model.js'
+import { getSessionCollection, type SessionDocument } from '../../db/models/session.model.js'
 import {
   getUserCollection,
   toPublicUser,
   type PublicUser,
   type UserDocument,
 } from '../../db/models/user.model.js'
-import { HttpError } from '../../http/errors.js'
+import { HttpError } from '../../errors/http-error.js'
 import { createAuthToken, verifyAuthToken } from './jwt.js'
 import { hashPassword, verifyPassword } from './password.js'
-import type { LoginRequest, SignupRequest } from './auth.types.js'
+import type { AuthSessionResult, LoginRequest, SignupRequest } from './auth.types.js'
 
-const MAX_ACTIVE_SESSIONS = 3
-
-export interface AuthSessionResult {
-  cookieName: string
-  maxAgeSeconds: number
-  token: string
-  user: PublicUser
+function getCookieMaxAgeMs(expiresAt: Date) {
+  return Math.max(0, expiresAt.getTime() - Date.now())
 }
 
-function nowDates() {
-  const now = new Date()
-  const expiresAt = new Date(now.getTime() + SESSION_TTL_MS)
-  const absoluteExpiresAt = new Date(now.getTime() + SESSION_ABSOLUTE_TTL_MS)
-
-  return { now, expiresAt, absoluteExpiresAt }
+function getJwtExpirySeconds(expiresAt: Date) {
+  return Math.max(1, Math.floor((expiresAt.getTime() - Date.now()) / 1000))
 }
 
-function createToken(sessionId: ObjectId, userId: ObjectId, expiresAt: Date) {
-  const nowSeconds = Math.floor(Date.now() / 1000)
-
-  return createAuthToken({
-    sessionId: sessionId.toString(),
-    userId: userId.toString(),
-    iat: nowSeconds,
-    exp: Math.floor(expiresAt.getTime() / 1000),
-  })
+function createSessionDates(now = new Date()) {
+  return {
+    createdAt: now,
+    expiresAt: new Date(now.getTime() + SESSION_SOFT_TTL_MS),
+    hardExpiresAt: new Date(now.getTime() + SESSION_HARD_TTL_MS),
+    lastRefreshedAt: now,
+  }
 }
 
-function getMaxAgeSeconds(expiresAt: Date) {
-  return Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000))
-}
-
-function assertValidObjectId(value: string) {
+function assertObjectId(value: string) {
   if (!ObjectId.isValid(value)) {
     throw new HttpError(401, 'Invalid session')
   }
@@ -57,39 +42,68 @@ function assertValidObjectId(value: string) {
   return new ObjectId(value)
 }
 
-async function createSession(user: UserDocument): Promise<AuthSessionResult> {
+function getUtcDateKey(date: Date) {
+  return date.toISOString().slice(0, 10)
+}
+
+function shouldRefreshSession(session: SessionDocument, now: Date) {
+  return getUtcDateKey(session.lastRefreshedAt) !== getUtcDateKey(now)
+}
+
+function isDuplicateKeyError(error: unknown) {
+  return error instanceof MongoServerError && error.code === 11000
+}
+
+function buildAuthResult(
+  user: PublicUser,
+  session: SessionDocument,
+  refreshed: boolean
+): AuthSessionResult {
+  return {
+    cookieMaxAgeMs: getCookieMaxAgeMs(session.expiresAt),
+    refreshed,
+    token: createAuthToken(
+      { sessionId: session._id.toString(), userId: session.userId.toString() },
+      getJwtExpirySeconds(session.expiresAt)
+    ),
+    user,
+  }
+}
+
+async function trimOldSessions(userId: ObjectId) {
   const sessions = await getSessionCollection()
-  const { now, expiresAt, absoluteExpiresAt } = nowDates()
-  const session = await sessions.insertOne({
-    _id: new ObjectId(),
-    userId: user._id,
-    createdAt: now,
-    expiresAt,
-    absoluteExpiresAt,
-  })
+  const now = new Date()
 
   const activeSessions = await sessions
-    .find({ userId: user._id })
-    .sort({ createdAt: -1 })
+    .find({ userId, revokedAt: null, expiresAt: { $gt: now } })
+    .sort({ lastRefreshedAt: -1, createdAt: -1 })
     .project<{ _id: ObjectId }>({ _id: 1 })
     .toArray()
 
-  const oldSessionIds = activeSessions
-    .slice(MAX_ACTIVE_SESSIONS)
-    .map(activeSession => activeSession._id)
+  const staleSessionIds = activeSessions.slice(MAX_ACTIVE_SESSIONS).map(session => session._id)
 
-  if (oldSessionIds.length > 0) {
-    await sessions.deleteMany({ _id: { $in: oldSessionIds } })
+  if (staleSessionIds.length > 0) {
+    await sessions.updateMany(
+      { _id: { $in: staleSessionIds } },
+      { $set: { revokedAt: now, expiresAt: now } }
+    )
+  }
+}
+
+async function createSession(user: UserDocument): Promise<AuthSessionResult> {
+  const sessions = await getSessionCollection()
+  const dates = createSessionDates()
+  const session: SessionDocument = {
+    _id: new ObjectId(),
+    userId: user._id,
+    revokedAt: null,
+    ...dates,
   }
 
-  const token = createToken(session.insertedId, user._id, expiresAt)
+  await sessions.insertOne(session)
+  await trimOldSessions(user._id)
 
-  return {
-    cookieName: AUTH_COOKIE_NAME,
-    maxAgeSeconds: getMaxAgeSeconds(expiresAt),
-    token,
-    user: toPublicUser(user),
-  }
+  return buildAuthResult(toPublicUser(user), session, true)
 }
 
 export async function signup(input: SignupRequest): Promise<AuthSessionResult> {
@@ -103,17 +117,24 @@ export async function signup(input: SignupRequest): Promise<AuthSessionResult> {
   }
 
   const now = new Date()
-  const passwordHash = await hashPassword(input.password)
   const user: UserDocument = {
     _id: new ObjectId(),
     username: input.username,
     email: input.email,
-    passwordHash,
+    passwordHash: await hashPassword(input.password),
     createdAt: now,
     updatedAt: now,
   }
 
-  await users.insertOne(user)
+  try {
+    await users.insertOne(user)
+  } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      throw new HttpError(409, 'Email or username already exists')
+    }
+
+    throw error
+  }
 
   return createSession(user)
 }
@@ -133,21 +154,16 @@ export async function login(input: LoginRequest): Promise<AuthSessionResult> {
 
 export async function getCurrentUser(token: string): Promise<AuthSessionResult> {
   const payload = verifyAuthToken(token)
-  const sessionId = assertValidObjectId(payload.sessionId)
-  const userId = assertValidObjectId(payload.userId)
+  const sessionId = assertObjectId(payload.sessionId)
+  const userId = assertObjectId(payload.userId)
   const sessions = await getSessionCollection()
   const users = await getUserCollection()
-  const session = await sessions.findOne({ _id: sessionId, userId })
   const now = new Date()
+  const session = await sessions.findOne({ _id: sessionId, userId, revokedAt: null })
 
-  if (!session || session.expiresAt <= now || session.absoluteExpiresAt <= now) {
+  if (!session || session.expiresAt <= now || session.hardExpiresAt <= now) {
     throw new HttpError(401, 'Session expired')
   }
-
-  const refreshedExpiresAt = new Date(
-    Math.min(now.getTime() + SESSION_TTL_MS, session.absoluteExpiresAt.getTime())
-  )
-  await sessions.updateOne({ _id: session._id }, { $set: { expiresAt: refreshedExpiresAt } })
 
   const user = await users.findOne({ _id: userId })
 
@@ -155,19 +171,36 @@ export async function getCurrentUser(token: string): Promise<AuthSessionResult> 
     throw new HttpError(401, 'User not found')
   }
 
-  return {
-    cookieName: AUTH_COOKIE_NAME,
-    maxAgeSeconds: getMaxAgeSeconds(refreshedExpiresAt),
-    token: createToken(session._id, user._id, refreshedExpiresAt),
-    user: toPublicUser(user),
+  if (!shouldRefreshSession(session, now)) {
+    return buildAuthResult(toPublicUser(user), session, false)
   }
+
+  const refreshedExpiresAt = new Date(
+    Math.min(now.getTime() + SESSION_SOFT_TTL_MS, session.hardExpiresAt.getTime())
+  )
+
+  const updatedSession: SessionDocument = {
+    ...session,
+    expiresAt: refreshedExpiresAt,
+    lastRefreshedAt: now,
+  }
+
+  await sessions.updateOne(
+    { _id: session._id, revokedAt: null },
+    { $set: { expiresAt: refreshedExpiresAt, lastRefreshedAt: now } }
+  )
+
+  return buildAuthResult(toPublicUser(user), updatedSession, true)
 }
 
-export async function logout(token: string | null) {
+export async function logout(token: string | undefined) {
   if (!token) return
 
   const payload = verifyAuthToken(token)
   const sessions = await getSessionCollection()
 
-  await sessions.deleteOne({ _id: assertValidObjectId(payload.sessionId) })
+  await sessions.updateOne(
+    { _id: assertObjectId(payload.sessionId) },
+    { $set: { revokedAt: new Date(), expiresAt: new Date() } }
+  )
 }

@@ -1,28 +1,33 @@
-import { useSyncExternalStore, type Dispatch, type SetStateAction } from 'react'
+import {
+  useSyncExternalStore,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 
-let gameActive = false
+let gameActive = false;
 
-const listeners = new Set<() => void>()
+const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
-  listeners.add(listener)
+  listeners.add(listener);
 
   return () => {
-    listeners.delete(listener)
-  }
+    listeners.delete(listener);
+  };
 }
 
 function getSnapshot() {
-  return gameActive
+  return gameActive;
 }
 
 function setGameActive(nextValue: SetStateAction<boolean>) {
-  const nextActive = typeof nextValue === 'function' ? nextValue(gameActive) : nextValue
+  const nextActive =
+    typeof nextValue === "function" ? nextValue(gameActive) : nextValue;
 
-  if (Object.is(gameActive, nextActive)) return
+  if (Object.is(gameActive, nextActive)) return;
 
-  gameActive = nextActive
-  listeners.forEach(listener => listener())
+  gameActive = nextActive;
+  listeners.forEach((listener) => listener());
 }
 
 /**
@@ -32,7 +37,7 @@ function setGameActive(nextValue: SetStateAction<boolean>) {
  * the back button can observe it from anywhere inside React.
  */
 export function useGameActive(): [boolean, Dispatch<SetStateAction<boolean>>] {
-  const isActive = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+  const isActive = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  return [isActive, setGameActive]
+  return [isActive, setGameActive];
 }

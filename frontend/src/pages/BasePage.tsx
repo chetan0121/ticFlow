@@ -1,9 +1,9 @@
-import { type ReactNode } from 'react'
-import BackButton from '../components/buttons/BackButton'
-import SidebarButton from '../components/sidebar/SidebarButton'
+import { type ReactNode } from "react";
+import BackButton from "../components/buttons/BackButton";
+import SidebarButton from "../components/sidebar/SidebarButton";
 
 interface BasePageProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 function BasePage({ children }: BasePageProps) {
@@ -15,7 +15,7 @@ function BasePage({ children }: BasePageProps) {
       </div>
       <main className="h-full w-full px-10">{children}</main>
     </div>
-  )
+  );
 }
 
-export default BasePage
+export default BasePage;

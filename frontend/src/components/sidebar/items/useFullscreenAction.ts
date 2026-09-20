@@ -1,17 +1,17 @@
-import { Fullscreen, Minimize } from 'lucide-react'
-import { useFullscreen } from '../../../hooks/useFullscreen'
+import { Fullscreen, Minimize } from "lucide-react";
+import { useFullscreen } from "../../../hooks/useFullscreen";
 
 function useFullscreenAction() {
-  const { isFullscreen, toggleFullscreen } = useFullscreen()
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
 
   return {
-    key: 'fullscreen',
-    label: isFullscreen ? 'Minimize' : 'Fullscreen',
+    key: "fullscreen",
+    label: isFullscreen ? "Minimize" : "Fullscreen",
     Icon: isFullscreen ? Minimize : Fullscreen,
     onClick: () => {
-      void toggleFullscreen()
+      void toggleFullscreen();
     },
-  }
+  };
 }
 
-export default useFullscreenAction
+export default useFullscreenAction;

@@ -1,14 +1,14 @@
-import type { BoardState } from '../types'
-import BoardCell from './Cell'
+import type { BoardState } from "../types";
+import BoardCell from "./Cell";
 
 interface GridProps {
-  board: BoardState
-  isLast: (rowIndex: number, cellIndex: number) => boolean
-  onCellClick: (rowIndex: number, cellIndex: number) => void
+  board: BoardState;
+  isLast: (rowIndex: number, cellIndex: number) => boolean;
+  onCellClick: (rowIndex: number, cellIndex: number) => void;
 }
 
 function BoardGrid({ board, isLast, onCellClick }: GridProps) {
-  const columnCount = board[0]?.length ?? 0
+  const columnCount = board[0]?.length ?? 0;
 
   return (
     <div className="mx-auto w-full max-w-[min(92vw,58vh,38rem)]">
@@ -28,11 +28,11 @@ function BoardGrid({ board, isLast, onCellClick }: GridProps) {
               isLast={isLast(rowIndex, cellIndex)}
               onClick={onCellClick}
             />
-          ))
+          )),
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default BoardGrid
+export default BoardGrid;

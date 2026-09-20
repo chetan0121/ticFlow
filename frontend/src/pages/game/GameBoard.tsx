@@ -1,36 +1,38 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Circle, Pause, Play, RotateCcw, X } from 'lucide-react'
-import BoardGrid from '../../features/game/components/Grid'
-import LeaveGameConfirm from '../../features/game/components/LeaveGameConfirm'
-import GameResultPopup from '../../features/game/components/ResultPopup'
-import PlayerTimer from '../../features/game/components/PlayerTimer'
-import useBoard from '../../features/game/hooks/useBoard'
-import { useGameActive } from '../../features/game/hooks/useGameActive'
-import { useMenuContext } from '../../features/menu/hooks/useMenuContext'
-import { GAME_MODES, GAME_SUB_MODES } from '../../features/menu/constants'
-import AppRoutes from '../../router/AppRoutes'
-import type { PlayerMark } from '../../features/game/types'
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Circle, Pause, Play, RotateCcw, X } from "lucide-react";
+import BoardGrid from "../../features/game/components/Grid";
+import LeaveGameConfirm from "../../features/game/components/LeaveGameConfirm";
+import GameResultPopup from "../../features/game/components/ResultPopup";
+import PlayerTimer from "../../features/game/components/PlayerTimer";
+import useBoard from "../../features/game/hooks/useBoard";
+import { useGameActive } from "../../features/game/hooks/useGameActive";
+import { useMenuContext } from "../../features/menu/hooks/useMenuContext";
+import { GAME_MODES, GAME_SUB_MODES } from "../../features/menu/constants";
+import AppRoutes from "../../router/AppRoutes";
+import type { PlayerMark } from "../../features/game/types";
 
 const PLAYER_STYLES: Record<PlayerMark, string> = {
-  O: 'border-cyan-300/45 bg-cyan-400/12 text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.12)]',
-  X: 'border-rose-300/45 bg-rose-400/12 text-rose-100 shadow-[0_0_28px_rgba(251,113,133,0.12)]',
-}
+  O: "border-cyan-300/45 bg-cyan-400/12 text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.12)]",
+  X: "border-rose-300/45 bg-rose-400/12 text-rose-100 shadow-[0_0_28px_rgba(251,113,133,0.12)]",
+};
 
 function PlayerBadge({
   mark,
   active,
   won,
 }: {
-  mark: PlayerMark
-  active: boolean
-  won: boolean
+  mark: PlayerMark;
+  active: boolean;
+  won: boolean;
 }) {
   const stateClass =
-    active || won ? PLAYER_STYLES[mark] : 'border-white/10 bg-black/18 text-white/48'
-  const Icon = mark === 'O' ? Circle : X
+    active || won
+      ? PLAYER_STYLES[mark]
+      : "border-white/10 bg-black/18 text-white/48";
+  const Icon = mark === "O" ? Circle : X;
 
-  const Name = 'Player'
+  const Name = "Player";
 
   return (
     <div
@@ -38,8 +40,8 @@ function PlayerBadge({
     >
       <span
         className={`absolute inset-y-2 left-0 w-1 rounded-r-full transition-opacity ${
-          active || won ? 'opacity-100' : 'opacity-0'
-        } ${mark === 'O' ? 'bg-cyan-200' : 'bg-rose-200'}`}
+          active || won ? "opacity-100" : "opacity-0"
+        } ${mark === "O" ? "bg-cyan-200" : "bg-rose-200"}`}
       />
       <span className="flex items-center gap-2">
         <Icon className="h-4 w-4 opacity-85" strokeWidth={2.4} />
@@ -47,19 +49,21 @@ function PlayerBadge({
           {Name}
         </span>
       </span>
-      <span className="font-['Oswald'] text-2xl leading-none font-semibold">{mark}</span>
+      <span className="font-['Oswald'] text-2xl leading-none font-semibold">
+        {mark}
+      </span>
     </div>
-  )
+  );
 }
 
 interface RestartConfirmProps {
-  onCancel: () => void
-  onConfirm: () => void
-  open: boolean
+  onCancel: () => void;
+  onConfirm: () => void;
+  open: boolean;
 }
 
 function RestartConfirm({ onCancel, onConfirm, open }: RestartConfirmProps) {
-  if (!open) return null
+  if (!open) return null;
 
   return (
     <div
@@ -103,7 +107,7 @@ function RestartConfirm({ onCancel, onConfirm, open }: RestartConfirmProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function GameBoard() {
@@ -119,89 +123,93 @@ function GameBoard() {
     status,
     timeLimit,
     winner,
-  } = useBoard()
-  const [showResultPopup, setShowResultPopup] = useState(false)
-  const [showRestartConfirm, setShowRestartConfirm] = useState(false)
-  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
-  const [, setGameActive] = useGameActive()
-  const navigate = useNavigate()
+  } = useBoard();
+  const [showResultPopup, setShowResultPopup] = useState(false);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [, setGameActive] = useGameActive();
+  const navigate = useNavigate();
   const {
     state: { coreMode, subMode },
-  } = useMenuContext()
+  } = useMenuContext();
 
   const coreModeLabel =
-    GAME_MODES().modes.find(mode => mode.value === coreMode)?.label ?? coreMode
+    GAME_MODES().modes.find((mode) => mode.value === coreMode)?.label ??
+    coreMode;
   const subModeLabel =
-    GAME_SUB_MODES(coreMode).modes.find(mode => mode.value === subMode)?.label ?? subMode
+    GAME_SUB_MODES(coreMode).modes.find((mode) => mode.value === subMode)
+      ?.label ?? subMode;
 
   useEffect(() => {
-    if (status === 'finished' && winner !== null) {
+    if (status === "finished" && winner !== null) {
       // Schedule the state update to avoid cascading renders
       // by deferring it to the next tick.
-      requestAnimationFrame(() => setShowResultPopup(true))
+      requestAnimationFrame(() => setShowResultPopup(true));
     }
-  }, [status, winner])
+  }, [status, winner]);
 
-  const shouldConfirmLeave = (status === 'playing' || status === 'paused') && winner === null
-
-  useEffect(() => {
-    setGameActive(shouldConfirmLeave)
-
-    return () => setGameActive(false)
-  }, [setGameActive, shouldConfirmLeave])
+  const shouldConfirmLeave =
+    (status === "playing" || status === "paused") && winner === null;
 
   useEffect(() => {
-    if (!shouldConfirmLeave) return
+    setGameActive(shouldConfirmLeave);
+
+    return () => setGameActive(false);
+  }, [setGameActive, shouldConfirmLeave]);
+
+  useEffect(() => {
+    if (!shouldConfirmLeave) return;
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault()
-    }
+      event.preventDefault();
+    };
 
-    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [shouldConfirmLeave])
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [shouldConfirmLeave]);
 
   function handleBackToMenu() {
     if (shouldConfirmLeave) {
-      setShowLeaveConfirm(true)
-      return
+      setShowLeaveConfirm(true);
+      return;
     }
 
-    void navigate(AppRoutes.gameMenu.path)
+    void navigate(AppRoutes.gameMenu.path);
   }
 
   function leaveToMenu() {
-    setShowLeaveConfirm(false)
-    void navigate(AppRoutes.gameMenu.path)
+    setShowLeaveConfirm(false);
+    void navigate(AppRoutes.gameMenu.path);
   }
 
   function handleReplay() {
-    replay()
-    setShowResultPopup(false)
-    setShowRestartConfirm(false)
+    replay();
+    setShowResultPopup(false);
+    setShowRestartConfirm(false);
   }
 
   function handleRestartRequest() {
-    if ((status === 'playing' || status === 'paused') && winner === null) {
-      setShowRestartConfirm(true)
-      return
+    if ((status === "playing" || status === "paused") && winner === null) {
+      setShowRestartConfirm(true);
+      return;
     }
 
-    handleReplay()
+    handleReplay();
   }
 
   function handlePauseToggle() {
-    if (status === 'playing') {
-      pause()
-    } else if (status === 'paused') {
-      resume()
+    if (status === "playing") {
+      pause();
+    } else if (status === "paused") {
+      resume();
     }
   }
 
-  const isPaused = status === 'paused'
-  const isGameActive = status === 'playing'
-  const canPause = (status === 'playing' || status === 'paused') && winner === null
+  const isPaused = status === "paused";
+  const isGameActive = status === "playing";
+  const canPause =
+    (status === "playing" || status === "paused") && winner === null;
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col items-center justify-center px-0 py-3 sm:py-5">
@@ -221,14 +229,24 @@ function GameBoard() {
               onClick={handlePauseToggle}
               disabled={!canPause}
               className="group mr-2 flex h-11 items-center justify-center gap-2 rounded-lg border border-white/12 bg-black/18 px-3 font-['Montserrat'] text-xs font-bold text-white/72 transition-colors hover:border-cyan-200/35 hover:bg-cyan-200/10 hover:text-cyan-100 focus-visible:ring-2 focus-visible:ring-cyan-200/45 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-              aria-label={isPaused ? 'Resume game' : 'Pause game'}
+              aria-label={isPaused ? "Resume game" : "Pause game"}
             >
               {isPaused ? (
-                <Play className="h-4 w-4" fill="currentColor" strokeWidth={2.4} />
+                <Play
+                  className="h-4 w-4"
+                  fill="currentColor"
+                  strokeWidth={2.4}
+                />
               ) : (
-                <Pause className="h-4 w-4" fill="currentColor" strokeWidth={2.4} />
+                <Pause
+                  className="h-4 w-4"
+                  fill="currentColor"
+                  strokeWidth={2.4}
+                />
               )}
-              <span className="hidden min-[430px]:inline">{isPaused ? 'Resume' : 'Pause'}</span>
+              <span className="hidden min-[430px]:inline">
+                {isPaused ? "Resume" : "Pause"}
+              </span>
             </button>
             <button
               type="button"
@@ -240,7 +258,9 @@ function GameBoard() {
                 className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-45"
                 strokeWidth={2.4}
               />
-              <span className="hidden min-[430px]:inline">{winner ? 'Replay' : 'Restart'}</span>
+              <span className="hidden min-[430px]:inline">
+                {winner ? "Replay" : "Restart"}
+              </span>
             </button>
           </div>
         </div>
@@ -251,13 +271,13 @@ function GameBoard() {
               <PlayerTimer
                 mark="O"
                 remainingTime={players.O.remainingTime}
-                active={currentTurn === 'O' && isGameActive && !winner}
+                active={currentTurn === "O" && isGameActive && !winner}
                 winner={winner}
               />
               <PlayerTimer
                 mark="X"
                 remainingTime={players.X.remainingTime}
-                active={currentTurn === 'X' && isGameActive && !winner}
+                active={currentTurn === "X" && isGameActive && !winner}
                 winner={winner}
               />
             </>
@@ -265,13 +285,13 @@ function GameBoard() {
             <>
               <PlayerBadge
                 mark="O"
-                active={currentTurn === 'O' && isGameActive && !winner}
-                won={winner === 'O'}
+                active={currentTurn === "O" && isGameActive && !winner}
+                won={winner === "O"}
               />
               <PlayerBadge
                 mark="X"
-                active={currentTurn === 'X' && isGameActive && !winner}
-                won={winner === 'X'}
+                active={currentTurn === "X" && isGameActive && !winner}
+                won={winner === "X"}
               />
             </>
           )}
@@ -279,7 +299,11 @@ function GameBoard() {
       </div>
 
       <div className="relative mx-auto mt-3 w-full max-w-[min(92vw,58vh,38rem)] sm:mt-4">
-        <BoardGrid board={board} isLast={isLastMove} onCellClick={onCellClick} />
+        <BoardGrid
+          board={board}
+          isLast={isLastMove}
+          onCellClick={onCellClick}
+        />
         {isPaused ? (
           <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/30 backdrop-blur-[1px]">
             <div className="rounded-lg border border-cyan-200/24 bg-black/55 px-4 py-3 text-center shadow-[0_18px_50px_rgba(0,0,0,0.42)]">
@@ -313,7 +337,7 @@ function GameBoard() {
         winner={winner}
       />
     </div>
-  )
+  );
 }
 
-export default GameBoard
+export default GameBoard;

@@ -1,43 +1,45 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react";
 
 export type LoadingMessage = {
-  txt: string
-  keepTime: number
-}
+  txt: string;
+  keepTime: number;
+};
 
 interface LoadingAnimProps {
-  messages?: LoadingMessage[]
-  onLastMessage?: () => void
+  messages?: LoadingMessage[];
+  onLastMessage?: () => void;
 }
 
-const DEFAULT_LOADING_MESSAGES: LoadingMessage[] = [{ txt: 'Loading...', keepTime: 0 }]
+const DEFAULT_LOADING_MESSAGES: LoadingMessage[] = [
+  { txt: "Loading...", keepTime: 0 },
+];
 
 export default function LoadingAnimation({
   messages = DEFAULT_LOADING_MESSAGES,
   onLastMessage,
 }: LoadingAnimProps) {
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    if (!messages || messages.length === 0) return
+    if (!messages || messages.length === 0) return;
 
     if (currentIndex >= messages.length - 1) {
-      onLastMessage?.()
-      return
+      onLastMessage?.();
+      return;
     }
 
-    const currentMessage = messages[currentIndex]
-    if (!currentMessage) return
-    if (currentMessage.keepTime <= 0) return
+    const currentMessage = messages[currentIndex];
+    if (!currentMessage) return;
+    if (currentMessage.keepTime <= 0) return;
 
     const timer = setTimeout(() => {
-      setCurrentIndex(prev => prev + 1)
-    }, currentMessage.keepTime * 1000)
+      setCurrentIndex((prev) => prev + 1);
+    }, currentMessage.keepTime * 1000);
 
-    return () => clearTimeout(timer)
-  }, [currentIndex, messages, onLastMessage])
+    return () => clearTimeout(timer);
+  }, [currentIndex, messages, onLastMessage]);
 
-  const message = messages[currentIndex]?.txt ?? 'Loading...'
+  const message = messages[currentIndex]?.txt ?? "Loading...";
 
   return (
     <div className="flex w-[90vw] flex-col items-center justify-center">
@@ -53,5 +55,5 @@ export default function LoadingAnimation({
         {message}
       </span>
     </div>
-  )
+  );
 }

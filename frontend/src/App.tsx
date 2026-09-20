@@ -1,6 +1,6 @@
-import AppRouter from './router/AppRouter'
-import { AuthProvider } from './features/auth/context/AuthProvider'
-import { GameMenuProvider } from './features/menu/context/MenuProvider'
+import AppRouter from "./router/AppRouter";
+import { AuthProvider } from "./features/auth/context/AuthProvider";
+import { GameMenuProvider } from "./features/menu/context/MenuProvider";
 
 function App() {
   return (
@@ -9,7 +9,7 @@ function App() {
         <AppRouter />
       </GameMenuProvider>
     </AuthProvider>
-  )
+  );
 }
 
-export default App
+export default App;

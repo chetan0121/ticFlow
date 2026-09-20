@@ -1,20 +1,20 @@
-import type { LucideIcon } from 'lucide-react'
-import useFullscreenAction from './items/useFullscreenAction'
+import type { LucideIcon } from "lucide-react";
+import useFullscreenAction from "./items/useFullscreenAction";
 
 interface SidebarNavItem {
-  key: string
-  label: string
-  Icon: LucideIcon
-  onClick: () => void
+  key: string;
+  label: string;
+  Icon: LucideIcon;
+  onClick: () => void;
 }
 
 function SidebarNavigation() {
-  const fullscreenAction = useFullscreenAction()
-  const items: SidebarNavItem[] = [fullscreenAction]
+  const fullscreenAction = useFullscreenAction();
+  const items: SidebarNavItem[] = [fullscreenAction];
 
   return (
     <div className="border-y border-t-3 border-white/10 border-t-white/20">
-      {items.map(item => (
+      {items.map((item) => (
         <button
           key={item.key}
           type="button"
@@ -28,7 +28,7 @@ function SidebarNavigation() {
         </button>
       ))}
     </div>
-  )
+  );
 }
 
-export default SidebarNavigation
+export default SidebarNavigation;

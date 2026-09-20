@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react";
 
 interface GameMenuGridProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 function GameMenuGrid({ children }: GameMenuGridProps) {
@@ -9,12 +9,12 @@ function GameMenuGrid({ children }: GameMenuGridProps) {
     <div
       className="grid w-full gap-4"
       style={{
-        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 18rem), 1fr))',
+        gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 18rem), 1fr))",
       }}
     >
       {children}
     </div>
-  )
+  );
 }
 
-export default GameMenuGrid
+export default GameMenuGrid;

@@ -1,6 +1,6 @@
 interface NextButtonProps {
-  text: string
-  onClick: () => void
+  text: string;
+  onClick: () => void;
 }
 
 function NextButton({ text, onClick }: NextButtonProps) {
@@ -12,7 +12,7 @@ function NextButton({ text, onClick }: NextButtonProps) {
     >
       {text}
     </button>
-  )
+  );
 }
 
-export default NextButton
+export default NextButton;

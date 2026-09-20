@@ -1,9 +1,12 @@
-import type { Route } from '../../http/router.js'
+import { Router, type Router as ExpressRouter } from 'express'
+
+import { asyncHandler } from '../../middleware/async-handler.js'
+import { authenticate } from '../../middleware/authenticate.js'
 import { handleLogin, handleLogout, handleMe, handleSignup } from './auth.controller.js'
 
-export const authRoutes: Route[] = [
-  { method: 'POST', path: '/auth/signup', handler: handleSignup },
-  { method: 'POST', path: '/auth/login', handler: handleLogin },
-  { method: 'GET', path: '/auth/me', handler: handleMe },
-  { method: 'POST', path: '/auth/logout', handler: handleLogout },
-]
+export const authRouter: ExpressRouter = Router()
+
+authRouter.post('/signup', asyncHandler(handleSignup))
+authRouter.post('/login', asyncHandler(handleLogin))
+authRouter.get('/me', asyncHandler(authenticate), handleMe)
+authRouter.post('/logout', asyncHandler(handleLogout))

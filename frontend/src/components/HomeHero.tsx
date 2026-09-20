@@ -1,19 +1,19 @@
-import { Play } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import AppRoutes from '../router/AppRoutes'
+import { Play } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import AppRoutes from "../router/AppRoutes";
 
 function HomeHero() {
   // Text of the Component
-  const HEADING = 'TicFlow'
+  const HEADING = "TicFlow";
   const DESCRIPTION =
-    'The classic game reimagined. Experience strategic depth, and visually stunning gameplay.'
-  const START_BTN = 'START'
+    "The classic game reimagined. Experience strategic depth, and visually stunning gameplay.";
+  const START_BTN = "START";
 
   // To Handle Navigation
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const toGamePage = () => {
-    void navigate(AppRoutes.gameMenu.path)
-  }
+    void navigate(AppRoutes.gameMenu.path);
+  };
 
   return (
     <div className="flex w-full flex-col items-center justify-center gap-10">
@@ -48,7 +48,7 @@ function HomeHero() {
         </button>
       </div>
     </div>
-  )
+  );
 }
 
-export default HomeHero
+export default HomeHero;

@@ -1,13 +1,17 @@
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from "lucide-react";
 
 interface LeaveGameConfirmProps {
-  onCancel: () => void
-  onConfirm: () => void
-  open: boolean
+  onCancel: () => void;
+  onConfirm: () => void;
+  open: boolean;
 }
 
-function LeaveGameConfirm({ onCancel, onConfirm, open }: LeaveGameConfirmProps) {
-  if (!open) return null
+function LeaveGameConfirm({
+  onCancel,
+  onConfirm,
+  open,
+}: LeaveGameConfirmProps) {
+  if (!open) return null;
 
   return (
     <div
@@ -51,7 +55,7 @@ function LeaveGameConfirm({ onCancel, onConfirm, open }: LeaveGameConfirmProps) 
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default LeaveGameConfirm
+export default LeaveGameConfirm;

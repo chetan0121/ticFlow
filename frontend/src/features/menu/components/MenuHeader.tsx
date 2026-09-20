@@ -1,8 +1,8 @@
 interface MenuHeaderProps {
-  eyebrow?: string
-  title: string
-  subtitle?: string
-  modeLabel?: string
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  modeLabel?: string;
 }
 
 function MenuHeader({ eyebrow, title, subtitle, modeLabel }: MenuHeaderProps) {
@@ -27,7 +27,7 @@ function MenuHeader({ eyebrow, title, subtitle, modeLabel }: MenuHeaderProps) {
         </span>
       ) : null}
     </div>
-  )
+  );
 }
 
-export default MenuHeader
+export default MenuHeader;

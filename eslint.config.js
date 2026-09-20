@@ -5,7 +5,13 @@ import configPrettier from 'eslint-config-prettier'
 
 export { defineConfig }
 
-export const sharedIgnores = globalIgnores(['dist', 'node_modules', 'build', 'coverage', '*.config.*'])
+export const sharedIgnores = globalIgnores([
+  'dist',
+  'node_modules',
+  'build',
+  'coverage',
+  '*.config.*',
+])
 export const sharedJavaScriptConfig = js.configs.recommended
 export const sharedPrettierConfig = configPrettier
 
@@ -28,8 +34,4 @@ export function createTypeScriptConfig({ files, globals, project, tsconfigRootDi
   }
 }
 
-export default defineConfig([
-  sharedIgnores,
-  sharedJavaScriptConfig,
-  sharedPrettierConfig,
-])
+export default defineConfig([sharedIgnores, sharedJavaScriptConfig, sharedPrettierConfig])

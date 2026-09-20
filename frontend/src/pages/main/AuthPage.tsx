@@ -1,7 +1,7 @@
-import AuthForm from '../../features/auth/components/AuthForm'
+import AuthForm from "../../features/auth/components/AuthForm";
 
 function AuthPage() {
-  return <AuthForm />
+  return <AuthForm />;
 }
 
-export default AuthPage
+export default AuthPage;

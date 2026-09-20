@@ -4,30 +4,31 @@ import {
   GAME_TIME_CONTROLS,
   GAME_MOVE_LIMITS,
   type CoreModes,
-} from '../constants'
-import type { GameSetupOptions } from '../types'
-import { useMenuContext } from './useMenuContext'
+} from "../constants";
+import type { GameSetupOptions } from "../types";
+import { useMenuContext } from "./useMenuContext";
 
 export function useGameSetupOptions(): GameSetupOptions[] {
   const {
     state: { coreMode, subMode, timeControl, moveLimit },
     actions: { setCoreMode, setSubMode, setTimeControl, setMoveLimit },
-  } = useMenuContext()
+  } = useMenuContext();
 
-  const { text: modeText, modes: codeModes } = GAME_MODES()
-  const { text: subModeText, modes: subModes } = GAME_SUB_MODES(coreMode)
+  const { text: modeText, modes: codeModes } = GAME_MODES();
+  const { text: subModeText, modes: subModes } = GAME_SUB_MODES(coreMode);
 
   const selectCoreMode = (value: string) => {
-    const nextCoreMode = value as CoreModes
-    const nextSubMode = GAME_SUB_MODES(nextCoreMode).modes[0]?.value ?? 'flocal'
+    const nextCoreMode = value as CoreModes;
+    const nextSubMode =
+      GAME_SUB_MODES(nextCoreMode).modes[0]?.value ?? "flocal";
 
-    setCoreMode(nextCoreMode)
-    setSubMode(nextSubMode)
-  }
+    setCoreMode(nextCoreMode);
+    setSubMode(nextSubMode);
+  };
 
   return [
     {
-      key: 'mode',
+      key: "mode",
       text: modeText,
       selection: {
         options: codeModes,
@@ -36,7 +37,7 @@ export function useGameSetupOptions(): GameSetupOptions[] {
       },
     },
     {
-      key: 'subMode',
+      key: "subMode",
       text: subModeText,
       selection: {
         options: subModes,
@@ -45,7 +46,7 @@ export function useGameSetupOptions(): GameSetupOptions[] {
       },
     },
     {
-      key: 'turnTimer',
+      key: "turnTimer",
       text: GAME_TIME_CONTROLS.text,
       range: {
         ...GAME_TIME_CONTROLS.range,
@@ -54,7 +55,7 @@ export function useGameSetupOptions(): GameSetupOptions[] {
       },
     },
     {
-      key: 'moveCap',
+      key: "moveCap",
       text: GAME_MOVE_LIMITS.text,
       range: {
         ...GAME_MOVE_LIMITS.range,
@@ -62,5 +63,5 @@ export function useGameSetupOptions(): GameSetupOptions[] {
         setValue: setMoveLimit,
       },
     },
-  ]
+  ];
 }

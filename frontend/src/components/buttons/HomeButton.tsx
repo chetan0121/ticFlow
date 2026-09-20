@@ -1,13 +1,13 @@
-import { useNavigate } from 'react-router-dom'
-import AppRoutes from '../../router/AppRoutes'
+import { useNavigate } from "react-router-dom";
+import AppRoutes from "../../router/AppRoutes";
 
 function GoHomeBtn() {
-  const btnTxt = 'Go to Home'
+  const btnTxt = "Go to Home";
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const handleGoHome = () => {
-    void navigate(AppRoutes.home.path)
-  }
+    void navigate(AppRoutes.home.path);
+  };
 
   return (
     <div>
@@ -18,7 +18,7 @@ function GoHomeBtn() {
         {btnTxt}
       </button>
     </div>
-  )
+  );
 }
 
-export default GoHomeBtn
+export default GoHomeBtn;

@@ -1,47 +1,47 @@
-import { ArrowLeft, Handshake, RotateCcw, Trophy, X } from 'lucide-react'
-import type { WinState } from '../types'
+import { ArrowLeft, Handshake, RotateCcw, Trophy, X } from "lucide-react";
+import type { WinState } from "../types";
 
 export interface GameResultActions {
-  back: () => void | Promise<void>
-  close: () => void | Promise<void>
-  replay: () => void | Promise<void>
+  back: () => void | Promise<void>;
+  close: () => void | Promise<void>;
+  replay: () => void | Promise<void>;
 }
 
 interface GameResultPopupProps {
-  actions: GameResultActions
-  open: boolean
-  winner: WinState
+  actions: GameResultActions;
+  open: boolean;
+  winner: WinState;
 }
 
 function getResultContent(winner: WinState) {
-  if (winner === 'draw') {
+  if (winner === "draw") {
     return {
       Icon: Handshake,
-      title: 'Draw Game',
-      label: 'No winner',
-      tone: 'border-amber-200/45 bg-amber-300/10 text-amber-100',
-    }
-  } else if (winner === 'O') {
+      title: "Draw Game",
+      label: "No winner",
+      tone: "border-amber-200/45 bg-amber-300/10 text-amber-100",
+    };
+  } else if (winner === "O") {
     return {
       Icon: Trophy,
-      title: 'Player O Wins',
-      label: 'Winner',
-      tone: 'border-cyan-300/45 bg-cyan-400/10 text-cyan-100',
-    }
+      title: "Player O Wins",
+      label: "Winner",
+      tone: "border-cyan-300/45 bg-cyan-400/10 text-cyan-100",
+    };
   }
 
   return {
     Icon: Trophy,
-    title: 'Player X Wins',
-    label: 'Winner',
-    tone: 'border-rose-300/45 bg-rose-400/10 text-rose-100',
-  }
+    title: "Player X Wins",
+    label: "Winner",
+    tone: "border-rose-300/45 bg-rose-400/10 text-rose-100",
+  };
 }
 
 function GameResultPopup({ actions, open, winner }: GameResultPopupProps) {
-  if (!open || winner === null) return null
+  if (!open || winner === null) return null;
 
-  const { Icon, title, label, tone } = getResultContent(winner)
+  const { Icon, title, label, tone } = getResultContent(winner);
 
   return (
     <div
@@ -51,7 +51,9 @@ function GameResultPopup({ actions, open, winner }: GameResultPopupProps) {
       aria-labelledby="game-result-title"
     >
       <div className="w-full max-w-105 overflow-hidden rounded-lg border border-white/14 bg-[hsl(26,34%,10%)] shadow-[0_26px_90px_rgba(0,0,0,0.58)]">
-        <div className={`relative flex flex-col items-center gap-4 border-b px-6 py-7 ${tone}`}>
+        <div
+          className={`relative flex flex-col items-center gap-4 border-b px-6 py-7 ${tone}`}
+        >
           <button
             type="button"
             aria-label="Close result"
@@ -100,7 +102,7 @@ function GameResultPopup({ actions, open, winner }: GameResultPopupProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default GameResultPopup
+export default GameResultPopup;

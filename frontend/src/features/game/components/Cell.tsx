@@ -1,44 +1,44 @@
-import { Circle, X } from 'lucide-react'
-import type { CellValue } from '../types'
+import { Circle, X } from "lucide-react";
+import type { CellValue } from "../types";
 
 const MARK_STYLES: Record<Exclude<CellValue, null>, string> = {
-  O: 'border-cyan-300/50 bg-cyan-400/10 text-cyan-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_24px_rgba(34,211,238,0.14)]',
-  X: 'border-rose-300/50 bg-rose-400/10 text-rose-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_24px_rgba(251,113,133,0.14)]',
-}
+  O: "border-cyan-300/50 bg-cyan-400/10 text-cyan-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_24px_rgba(34,211,238,0.14)]",
+  X: "border-rose-300/50 bg-rose-400/10 text-rose-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_0_24px_rgba(251,113,133,0.14)]",
+};
 
 interface CellProps {
-  value: CellValue
-  rowIndex: number
-  cellIndex: number
-  isLast: boolean
-  onClick: (rowIndex: number, cellIndex: number) => void
+  value: CellValue;
+  rowIndex: number;
+  cellIndex: number;
+  isLast: boolean;
+  onClick: (rowIndex: number, cellIndex: number) => void;
 }
 
 function BoardCell({ value, rowIndex, cellIndex, isLast, onClick }: CellProps) {
   const renderSign = () => {
-    if (value === 'O') {
+    if (value === "O") {
       return (
         <Circle
           className="h-[46%] w-[46%] text-cyan-200 drop-shadow-[0_0_14px_rgba(103,232,249,0.32)]"
           strokeWidth={1.75}
           fill="none"
         />
-      )
-    } else if (value === 'X') {
+      );
+    } else if (value === "X") {
       return (
         <X
           className="h-[52%] w-[52%] text-rose-200 drop-shadow-[0_0_14px_rgba(253,164,175,0.3)]"
           strokeWidth={2.45}
         />
-      )
+      );
     }
-    return null
-  }
+    return null;
+  };
 
   const cellStateClass = value
     ? MARK_STYLES[value]
-    : 'border-white/10 bg-white/[0.055] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] hover:-translate-y-0.5 hover:border-amber-300/55 hover:bg-white/10 active:translate-y-0 active:bg-white/14'
-  const lastMoveClass = isLast ? 'saturate-85 ring-2 ring-amber-200/50' : ''
+    : "border-white/10 bg-white/[0.055] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] hover:-translate-y-0.5 hover:border-amber-300/55 hover:bg-white/10 active:translate-y-0 active:bg-white/14";
+  const lastMoveClass = isLast ? "saturate-85 ring-2 ring-amber-200/50" : "";
 
   return (
     <button
@@ -57,7 +57,7 @@ function BoardCell({ value, rowIndex, cellIndex, isLast, onClick }: CellProps) {
       ) : null}
       {renderSign()}
     </button>
-  )
+  );
 }
 
-export default BoardCell
+export default BoardCell;

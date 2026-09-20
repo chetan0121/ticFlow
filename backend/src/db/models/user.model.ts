@@ -27,12 +27,14 @@ export function toPublicUser(user: UserDocument): PublicUser {
 
 export async function getUserCollection(): Promise<Collection<UserDocument>> {
   const db = await getDb()
-  const collection = db.collection<UserDocument>('users')
+  return db.collection<UserDocument>('users')
+}
 
-  await collection.createIndexes([
+export async function ensureUserIndexes() {
+  const users = await getUserCollection()
+
+  await users.createIndexes([
     { key: { email: 1 }, unique: true },
     { key: { username: 1 }, unique: true },
   ])
-
-  return collection
 }

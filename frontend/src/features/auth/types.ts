@@ -1,11 +1,11 @@
 export interface AuthUser {
-  id: string
-  username: string
-  email: string
+  id: string;
+  username: string;
+  email: string;
 }
 
 export interface AuthResponse {
-  user: AuthUser
+  user: AuthUser;
 }
 
-export type AuthMode = 'login' | 'signup'
+export type AuthMode = "login" | "signup";

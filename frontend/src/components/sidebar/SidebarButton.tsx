@@ -1,9 +1,9 @@
-import { SidebarOpen } from 'lucide-react'
-import SidebarPanel from './SidebarPanel'
-import { useOutsideClick } from '../../hooks/useOutsideClick'
+import { SidebarOpen } from "lucide-react";
+import SidebarPanel from "./SidebarPanel";
+import { useOutsideClick } from "../../hooks/useOutsideClick";
 
 function SidebarButton() {
-  const { ref, isOpen, open, close } = useOutsideClick()
+  const { ref, isOpen, open, close } = useOutsideClick();
 
   return (
     <>
@@ -21,7 +21,7 @@ function SidebarButton() {
 
       <SidebarPanel isOpen={isOpen} onClose={close} panelRef={ref} />
     </>
-  )
+  );
 }
 
-export default SidebarButton
+export default SidebarButton;

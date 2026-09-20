@@ -1,4 +1,4 @@
-import { createContext } from 'react'
+import { createContext } from "react";
 import {
   GAME_MODES,
   GAME_MOVE_LIMITS,
@@ -7,17 +7,18 @@ import {
   type CoreModes,
   type RangeValue,
   type SubModes,
-} from '../constants'
+} from "../constants";
 
 // Default Menu values (Add new Menu state here)
-const defaultCoreMode = GAME_MODES().modes[0]?.value ?? 'friend'
-const defaultSubMode = GAME_SUB_MODES(defaultCoreMode).modes[0]?.value ?? 'flocal'
+const defaultCoreMode = GAME_MODES().modes[0]?.value ?? "friend";
+const defaultSubMode =
+  GAME_SUB_MODES(defaultCoreMode).modes[0]?.value ?? "flocal";
 
 export interface MenuStateType {
-  coreMode: CoreModes
-  subMode: SubModes
-  timeControl: RangeValue
-  moveLimit: RangeValue
+  coreMode: CoreModes;
+  subMode: SubModes;
+  timeControl: RangeValue;
+  moveLimit: RangeValue;
 }
 
 export const INITIAL_STATE = {
@@ -25,17 +26,21 @@ export const INITIAL_STATE = {
   subMode: defaultSubMode,
   timeControl: GAME_TIME_CONTROLS.range.value,
   moveLimit: GAME_MOVE_LIMITS.range.value,
-} satisfies MenuStateType
+} satisfies MenuStateType;
 
-type SetterName<Key extends string> = `set${Capitalize<Key>}`
+type SetterName<Key extends string> = `set${Capitalize<Key>}`;
 
 export type GameMenuSetters = {
-  [Key in keyof MenuStateType as SetterName<string & Key>]: (value: MenuStateType[Key]) => void
-}
+  [Key in keyof MenuStateType as SetterName<string & Key>]: (
+    value: MenuStateType[Key],
+  ) => void;
+};
 
 export interface MenuContextType {
-  state: MenuStateType
-  actions: GameMenuSetters
+  state: MenuStateType;
+  actions: GameMenuSetters;
 }
 
-export const GameMenuContext = createContext<MenuContextType | undefined>(undefined)
+export const GameMenuContext = createContext<MenuContextType | undefined>(
+  undefined,
+);

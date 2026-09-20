@@ -1,42 +1,44 @@
-import type { RefObject } from 'react'
-import { Grid3X3, LogIn, LogOut, SidebarClose, UserRound } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import SidebarNavigation from './SidebarNavigation'
-import AppRoutes from '../../router/AppRoutes'
-import { useAuth } from '../../features/auth/hooks/useAuth'
+import type { RefObject } from "react";
+import { Grid3X3, LogIn, LogOut, SidebarClose, UserRound } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import SidebarNavigation from "./SidebarNavigation";
+import AppRoutes from "../../router/AppRoutes";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 
 interface SidebarPanelProps {
-  panelRef: RefObject<HTMLDivElement | null>
-  isOpen: boolean
-  onClose: () => void
+  panelRef: RefObject<HTMLDivElement | null>;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const BrandText = 'TicFlow'
+const BrandText = "TicFlow";
 
 function SidebarPanel({ panelRef, isOpen, onClose }: SidebarPanelProps) {
-  const navigate = useNavigate()
-  const { isLoading, logout, user } = useAuth()
+  const navigate = useNavigate();
+  const { isLoading, logout, user } = useAuth();
 
   const goHome = () => {
-    void navigate(AppRoutes.home.path)
-    onClose()
-  }
+    void navigate(AppRoutes.home.path);
+    onClose();
+  };
 
   const goAuth = () => {
-    void navigate(AppRoutes.auth.path)
-    onClose()
-  }
+    void navigate(AppRoutes.auth.path);
+    onClose();
+  };
 
   const logoutUser = () => {
-    void logout()
-    onClose()
-  }
+    void logout();
+    onClose();
+  };
 
   return (
     <>
       <div
         className={`fixed inset-0 z-40 bg-black/35 backdrop-blur-[2px] transition-opacity duration-200 ease-out ${
-          isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+          isOpen
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
         }`}
         onPointerDown={onClose}
         aria-hidden="true"
@@ -44,7 +46,9 @@ function SidebarPanel({ panelRef, isOpen, onClose }: SidebarPanelProps) {
 
       <div
         className={`fixed top-0 left-0 z-50 flex h-dvh w-72 max-w-[84vw] flex-col overflow-hidden border-r border-white/10 bg-linear-to-b from-[hsl(34,34%,16%)] via-[hsl(28,35%,12%)] to-[hsl(18,36%,9%)] shadow-[18px_0_55px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform max-[350px]:w-screen max-[350px]:max-w-none ${
-          isOpen ? 'translate-x-0 opacity-100' : '-translate-x-[calc(100%+12px)] opacity-0'
+          isOpen
+            ? "translate-x-0 opacity-100"
+            : "-translate-x-[calc(100%+12px)] opacity-0"
         }`}
         ref={panelRef}
         aria-hidden={!isOpen}
@@ -90,7 +94,9 @@ function SidebarPanel({ panelRef, isOpen, onClose }: SidebarPanelProps) {
                 <span className="block truncate text-sm font-bold text-white">
                   {user.username}
                 </span>
-                <span className="block truncate text-xs text-white/42">{user.email}</span>
+                <span className="block truncate text-xs text-white/42">
+                  {user.email}
+                </span>
               </span>
               <button
                 type="button"
@@ -109,14 +115,14 @@ function SidebarPanel({ panelRef, isOpen, onClose }: SidebarPanelProps) {
               disabled={isLoading}
               className="flex h-11 w-full items-center justify-between rounded-md border border-white/10 bg-white/4 px-3 text-sm font-bold text-white/78 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-55"
             >
-              <span>{isLoading ? 'Checking account' : 'Login or signup'}</span>
+              <span>{isLoading ? "Checking account" : "Login or signup"}</span>
               <LogIn size={17} strokeWidth={2.4} />
             </button>
           )}
         </div>
       </div>
     </>
-  )
+  );
 }
 
-export default SidebarPanel
+export default SidebarPanel;

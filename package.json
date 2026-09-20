@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev": "bun run --filter '@ticflow/frontend' --filter '@ticflow/backend' --parallel dev",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,css,md}\" --ignore-path .gitignore",
+    "format": "bun run --cwd frontend format && bun run --cwd backend format",
     "lint": "bun run --cwd frontend lint && bun run --cwd backend lint",
     "ts-check": "bun run --cwd frontend ts-check && bun run --cwd backend ts-check",
     "build": "bun run --cwd frontend build && bun run --cwd backend build",
