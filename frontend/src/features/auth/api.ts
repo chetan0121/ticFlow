@@ -1,43 +1,35 @@
 import type { AuthResponse } from "./types";
+import { apiClient, getApiErrorMessage } from "../../api/http";
 
-const API_BASE_URL = `${globalThis.location.protocol}//${globalThis.location.hostname}:3000`;
+const AUTH_ERROR_MESSAGE = "Authentication failed";
 
-async function requestAuth(
+async function requestAuth<TBody extends object>(
   path: string,
-  options: RequestInit = {},
+  body?: TBody,
 ): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
+  try {
+    const response = body
+      ? await apiClient.post<AuthResponse>(path, body)
+      : await apiClient.get<AuthResponse>(path);
 
-  const body = (await response.json()) as Partial<AuthResponse> & {
-    error?: string;
-  };
+    if (!response.data.user) {
+      throw new Error(AUTH_ERROR_MESSAGE);
+    }
 
-  if (!response.ok || !body.user) {
-    throw new Error(body.error ?? "Authentication failed");
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, AUTH_ERROR_MESSAGE), {
+      cause: error,
+    });
   }
-
-  return { user: body.user };
 }
 
 export function signup(username: string, email: string, password: string) {
-  return requestAuth("/auth/signup", {
-    method: "POST",
-    body: JSON.stringify({ username, email, password }),
-  });
+  return requestAuth("/auth/signup", { username, email, password });
 }
 
 export function login(identifier: string, password: string) {
-  return requestAuth("/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ identifier, password }),
-  });
+  return requestAuth("/auth/login", { identifier, password });
 }
 
 export function getMe() {
@@ -45,8 +37,5 @@ export function getMe() {
 }
 
 export async function logout() {
-  await fetch(`${API_BASE_URL}/auth/logout`, {
-    method: "POST",
-    credentials: "include",
-  });
+  await apiClient.post("/auth/logout");
 }
