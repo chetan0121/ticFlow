@@ -1,7 +1,6 @@
 import 'dotenv/config'
 
 const DEFAULT_PORT = 3000
-const DEFAULT_FRONTEND_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
 
 function readRequiredEnv(name: string): string {
   const value = process.env[name]
@@ -39,7 +38,7 @@ function readBooleanEnv(name: string, defaultValue: boolean) {
   return value === 'true'
 }
 
-function readListEnv(name: string, fallback: string[] = []) {
+function readListEnv(name: string, fallback: string[] = []): string[] {
   const value = process.env[name]
 
   if (!value) return fallback
@@ -48,6 +47,10 @@ function readListEnv(name: string, fallback: string[] = []) {
     .split(',')
     .map(item => item.trim())
     .filter(Boolean)
+}
+
+function cleanRepeated(values: string[]): string[] {
+  return Array.from(new Set(values))
 }
 
 function readCookieSameSite(): 'lax' | 'strict' | 'none' {
@@ -63,13 +66,23 @@ function readCookieSameSite(): 'lax' | 'strict' | 'none' {
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port: readPort(),
-  frontendOrigins: Array.from(
-    new Set(readListEnv('FRONTEND_ORIGINS', DEFAULT_FRONTEND_ORIGINS))
-  ),
-  dnsServers: readListEnv('DNS_SERVERS'),
+  frontendOrigins: cleanRepeated(readListEnv('FRONTEND_ORIGINS')),
+  dnsServers: cleanRepeated(readListEnv('DNS_SERVERS')),
   mongoUri: readRequiredEnv('MONGODB_URI'),
   mongoDbName: readRequiredEnv('MONGODB_DB_NAME'),
   jwtSecret: readRequiredEnv('JWT_SECRET'),
   cookieSecure: readBooleanEnv('COOKIE_SECURE', false),
   cookieSameSite: readCookieSameSite(),
+}
+
+export function isOriginAllowed(origin: string | undefined): boolean {
+  if (!origin || env.frontendOrigins.includes(origin)) return true
+
+  try {
+    const hostname = new URL(origin).hostname.toLowerCase()
+
+    return hostname === 'localhost' || hostname === '127.0.0.1'
+  } catch {
+    return false
+  }
 }

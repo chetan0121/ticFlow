@@ -3,7 +3,7 @@ import cors from 'cors'
 import express, { type Application } from 'express'
 import helmet from 'helmet'
 
-import { env } from './config/env.js'
+import { isOriginAllowed } from './config/env.js'
 import { HttpError } from './errors/http-error.js'
 import { errorHandler } from './middleware/error-handler.js'
 import { authRouter } from './modules/auth/auth.routes.js'
@@ -13,7 +13,7 @@ function handleCorsOrigin(
   origin: string | undefined,
   callback: (error: Error | null, allowed?: boolean) => void
 ) {
-  if (!origin || env.frontendOrigins.includes(origin)) {
+  if (isOriginAllowed(origin)) {
     callback(null, true)
     return
   }
