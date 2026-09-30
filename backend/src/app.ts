@@ -1,53 +1,47 @@
-import cookieParser from 'cookie-parser'
-import cors from 'cors'
-import express, { type Application } from 'express'
+import type { Express } from 'express'
+import express from 'express'
 import helmet from 'helmet'
-
-import { isOriginAllowed } from './config/env.js'
-import { HttpError } from './errors/http-error.js'
+import cors from 'cors'
+import cookieParser from 'cookie-parser'
 import { errorHandler } from './middleware/error-handler.js'
-import { authRouter } from './modules/auth/auth.routes.js'
-import { healthRouter } from './modules/health/health.routes.js'
+import healthRouter from './modules/health/routes.js'
+import { isOriginAllowed } from './config/env.js'
+import authRouter from './modules/auth/routes.js'
 
-function handleCorsOrigin(
-  origin: string | undefined,
-  callback: (error: Error | null, allowed?: boolean) => void
-) {
-  if (isOriginAllowed(origin)) {
-    callback(null, true)
-    return
-  }
-
-  callback(new HttpError(403, 'Origin not allowed by CORS'))
-}
-
-export function createApp(): Application {
-  const app = express()
-
+export function getNewApp() {
+  const app: Express = express()
   app.disable('x-powered-by')
 
-  // Global middleware
+  // Security middleware
   app.use(helmet())
   app.use(
     cors({
+      origin: (origin, callback) => {
+        if (isOriginAllowed(origin)) {
+          callback(null, true)
+        } else {
+          callback(new Error('Not allowed by CORS'))
+        }
+      },
       credentials: true,
-      origin: handleCorsOrigin,
     })
   )
-
-  app.use(express.json({ limit: '32kb' }))
   app.use(cookieParser())
 
-  // Routes handle requests
-  app.use('/health', healthRouter)
-  app.use('/auth', authRouter)
+  // Request body parsers
+  app.use(express.json({ limit: '32kb' }))
+  app.use(express.urlencoded({ extended: true }))
 
-  // If no route send a response 404
-  app.use((_request, response) => {
-    response.status(404).json({ error: 'Not found' })
+  // routes
+  app.use('/api', healthRouter)
+  app.use('/api', authRouter)
+
+  // Invalid path
+  app.use((_req, res) => {
+    res.status(404).json({ error: 'Invalid path' })
   })
 
-  // Errors passed with next(error) are handled here.
+  // Error handler (must be last)
   app.use(errorHandler)
 
   return app

@@ -2,10 +2,11 @@ import 'dotenv/config'
 
 const DEFAULT_PORT = 3000
 
-function readRequiredEnv(name: string): string {
-  const value = process.env[name]
+function fetchEnv(name: string, defaultValue: string = ''): string {
+  const value = process.env[name]?.trim()
 
   if (!value) {
+    if (defaultValue) return defaultValue
     throw new Error(`Missing required environment variable: ${name}`)
   }
 
@@ -13,7 +14,7 @@ function readRequiredEnv(name: string): string {
 }
 
 function readPort() {
-  const value = process.env.PORT
+  const value = process.env.PORT?.trim()
 
   if (!value) return DEFAULT_PORT
 
@@ -27,7 +28,7 @@ function readPort() {
 }
 
 function readBooleanEnv(name: string, defaultValue: boolean) {
-  const value = process.env[name]
+  const value = process.env[name]?.trim().toLowerCase()
 
   if (!value) return defaultValue
 
@@ -54,7 +55,7 @@ function cleanRepeated(values: string[]): string[] {
 }
 
 function readCookieSameSite(): 'lax' | 'strict' | 'none' {
-  const value = process.env.COOKIE_SAME_SITE ?? 'lax'
+  const value = process.env.COOKIE_SAME_SITE?.trim().toLowerCase() ?? 'lax'
 
   if (value !== 'lax' && value !== 'strict' && value !== 'none') {
     throw new Error('COOKIE_SAME_SITE must be lax, strict, or none')
@@ -63,14 +64,21 @@ function readCookieSameSite(): 'lax' | 'strict' | 'none' {
   return value
 }
 
-export const env = {
-  nodeEnv: process.env.NODE_ENV ?? 'development',
+function fetchMongoURI(): string {
+  const uri = fetchEnv('MONGODB_URI')
+  const dbName = fetchEnv('MONGODB_DB_NAME')
+
+  const baseUri = uri.endsWith('/') ? uri : `${uri}/`
+  return `${baseUri}${dbName}`
+}
+
+const env = {
+  debugMode: readBooleanEnv('DEBUG_MODE', false),
   port: readPort(),
   frontendOrigins: cleanRepeated(readListEnv('FRONTEND_ORIGINS')),
   dnsServers: cleanRepeated(readListEnv('DNS_SERVERS')),
-  mongoUri: readRequiredEnv('MONGODB_URI'),
-  mongoDbName: readRequiredEnv('MONGODB_DB_NAME'),
-  jwtSecret: readRequiredEnv('JWT_SECRET'),
+  mongoUri: fetchMongoURI(),
+  jwtSecret: fetchEnv('JWT_SECRET'),
   cookieSecure: readBooleanEnv('COOKIE_SECURE', false),
   cookieSameSite: readCookieSameSite(),
 }
@@ -80,9 +88,10 @@ export function isOriginAllowed(origin: string | undefined): boolean {
 
   try {
     const hostname = new URL(origin).hostname.toLowerCase()
-
     return hostname === 'localhost' || hostname === '127.0.0.1'
   } catch {
     return false
   }
 }
+
+export default env

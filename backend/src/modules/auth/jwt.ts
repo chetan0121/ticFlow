@@ -1,15 +1,15 @@
 import jwt from 'jsonwebtoken'
 
-import { env } from '../../config/env.js'
-import { HttpError } from '../../errors/http-error.js'
-import type { AuthTokenPayload } from './auth.types.js'
+import env from '../../config/env.js'
+import { HttpError } from '../../errors/http-errors.js'
+import type { AuthTokenPayload } from './types.js'
 
 function isAuthTokenPayload(payload: unknown): payload is AuthTokenPayload {
   if (!payload || typeof payload !== 'object') return false
 
   const value = payload as Partial<AuthTokenPayload>
 
-  return typeof value.sessionId === 'string' && typeof value.userId === 'string'
+  return typeof value.sessionId === 'string'
 }
 
 export function createAuthToken(payload: AuthTokenPayload, expiresInSeconds: number) {
