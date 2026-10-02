@@ -1,22 +1,23 @@
 import mongoose from 'mongoose'
 import env from '../config/env.js'
 
-let db: mongoose.Mongoose | null = null
+let connection: Promise<mongoose.Mongoose> | null = null
 
-export async function connectMongo() {
-  if (db) return db
+export function connectMongo(): Promise<mongoose.Mongoose> {
+  if (!connection) {
+    connection = mongoose.connect(env.mongoUri)
+  }
 
-  db = await mongoose.connect(env.mongoUri)
-  if (!db) throw new Error('Failed to connect to MongoDB')
-
-  return db
+  return connection
 }
 
-export const getDb = connectMongo
+export function getConnectionState(): mongoose.ConnectionStates {
+  return mongoose.connection.readyState
+}
 
-export async function closeMongo() {
-  if (db) {
-    await mongoose.disconnect()
-    db = null
-  }
+export async function closeMongo(): Promise<void> {
+  if (!connection) return
+
+  await mongoose.disconnect()
+  connection = null
 }

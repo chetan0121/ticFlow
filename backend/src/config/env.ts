@@ -27,7 +27,7 @@ function readPort() {
   return port
 }
 
-function readBooleanEnv(name: string, defaultValue: boolean) {
+function readBooleanEnv(name: string, defaultValue: boolean = false): boolean {
   const value = process.env[name]?.trim().toLowerCase()
 
   if (!value) return defaultValue
@@ -55,7 +55,7 @@ function cleanRepeated(values: string[]): string[] {
 }
 
 function readCookieSameSite(): 'lax' | 'strict' | 'none' {
-  const value = process.env.COOKIE_SAME_SITE?.trim().toLowerCase() ?? 'lax'
+  const value = process.env.COOKIE_SAME_SITE?.trim().toLowerCase() || 'lax'
 
   if (value !== 'lax' && value !== 'strict' && value !== 'none') {
     throw new Error('COOKIE_SAME_SITE must be lax, strict, or none')
@@ -73,18 +73,21 @@ function fetchMongoURI(): string {
 }
 
 const env = {
-  debugMode: readBooleanEnv('DEBUG_MODE', false),
+  debugMode: readBooleanEnv('DEBUG_MODE'),
   port: readPort(),
   frontendOrigins: cleanRepeated(readListEnv('FRONTEND_ORIGINS')),
   dnsServers: cleanRepeated(readListEnv('DNS_SERVERS')),
   mongoUri: fetchMongoURI(),
   jwtSecret: fetchEnv('JWT_SECRET'),
-  cookieSecure: readBooleanEnv('COOKIE_SECURE', false),
+  cookieSecure: readBooleanEnv('COOKIE_SECURE'),
   cookieSameSite: readCookieSameSite(),
 }
 
 export function isOriginAllowed(origin: string | undefined): boolean {
-  if (!origin || env.frontendOrigins.includes(origin)) return true
+  if (env.debugMode && !origin) return true
+  else if (!origin) return false
+
+  if (env.frontendOrigins.includes(origin)) return true
 
   try {
     const hostname = new URL(origin).hostname.toLowerCase()

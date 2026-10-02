@@ -3,13 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --watch server.ts",
+    "dev": "bun --watch src/server.ts",
     "format": "prettier --write \"**/*.{ts,js,json,md}\" --ignore-path ../.gitignore",
     "lint": "eslint . --max-warnings 0",
     "ts-check": "tsc -b --noEmit",
     "build": "tsc -b",
     "release": "prettier --write \"**/*.{ts,js,json,md}\" --ignore-path ../.gitignore && eslint . && tsc -b",
-    "preview": "bun dist/server.js"
+    "preview": "bun dist/src/server.js"
   },
   "dependencies": {
     "argon2": "^0.45.1",

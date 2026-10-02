@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/error-handler.js'
 import healthRouter from './modules/health/routes.js'
 import { isOriginAllowed } from './config/env.js'
 import authRouter from './modules/auth/routes.js'
+import { HttpError } from './errors/http-errors.js'
 
 export function getNewApp() {
   const app: Express = express()
@@ -20,7 +21,7 @@ export function getNewApp() {
         if (isOriginAllowed(origin)) {
           callback(null, true)
         } else {
-          callback(new Error('Not allowed by CORS'))
+          callback(HttpError.forbidden('Not allowed by CORS'))
         }
       },
       credentials: true,
@@ -33,8 +34,8 @@ export function getNewApp() {
   app.use(express.urlencoded({ extended: true }))
 
   // routes
-  app.use('/api', healthRouter)
-  app.use('/api', authRouter)
+  app.use(healthRouter)
+  app.use(authRouter)
 
   // Invalid path
   app.use((_req, res) => {

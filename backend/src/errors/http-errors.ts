@@ -47,7 +47,5 @@ export class HttpError extends Error {
 }
 
 export function isHttpError(error: unknown): error is HttpError {
-  return (
-    error instanceof Error && 'code' in error && (error as { code: unknown }).code !== undefined
-  )
+  return error instanceof HttpError
 }

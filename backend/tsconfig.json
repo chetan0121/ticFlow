@@ -7,7 +7,7 @@
     "moduleResolution": "NodeNext",
     "esModuleInterop": true,
     "types": ["node"],
-    "rootDir": "./",
+    "rootDir": "src",
     "outDir": "dist",
     "verbatimModuleSyntax": true,
     "composite": true

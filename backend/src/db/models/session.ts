@@ -6,10 +6,12 @@ const sessionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+      index: true,
     },
     lastOnlineAt: {
       type: Date,
       required: true,
+      default: Date.now,
     },
     expiresAt: {
       type: Date,
@@ -19,8 +21,11 @@ const sessionSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-  }
+  },
+  { timestamps: true }
 )
 
-const Session = mongoose.model('Session', sessionSchema)
+sessionSchema.index({ hardExpiresAt: 1 }, { expireAfterSeconds: 0 })
+
+export const Session = mongoose.model('Session', sessionSchema)
 export default Session

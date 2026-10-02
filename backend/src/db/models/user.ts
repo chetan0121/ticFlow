@@ -1,14 +1,17 @@
 import mongoose from 'mongoose'
 
+import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from '../../config/constants.js'
+
 const userSchema = new mongoose.Schema(
   {
     username: {
       type: String,
       required: true,
       unique: true,
+      lowercase: true,
       trim: true,
-      minLength: 3,
-      maxLength: 50,
+      minLength: USERNAME_MIN_LENGTH,
+      maxLength: USERNAME_MAX_LENGTH,
     },
     email: {
       type: String,
@@ -22,6 +25,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      select: false,
     },
   },
   { timestamps: true }

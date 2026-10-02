@@ -1,13 +1,15 @@
 import { Router } from 'express'
-import { getDb } from '../../db/mongo.js'
+import mongoose from 'mongoose'
+
+import { getConnectionState } from '../../db/mongo.js'
 
 const router: Router = Router()
 
-router.get('/health', async (_req, res) => {
-  const isConnected = !!(await getDb())
+router.get('/health', (_req, res) => {
+  const isConnected = getConnectionState() === mongoose.ConnectionStates.connected
 
-  res.status(200).json({
-    status: 'ok',
+  res.status(isConnected ? 200 : 503).json({
+    status: isConnected ? 'ok' : 'degraded',
     mongoDB: isConnected ? 'connected' : 'not connected',
   })
 })
