@@ -1,7 +1,5 @@
 import 'dotenv/config'
 
-const DEFAULT_PORT = 3000
-
 function fetchEnv(name: string, defaultValue: string = ''): string {
   const value = process.env[name]?.trim()
 
@@ -13,10 +11,10 @@ function fetchEnv(name: string, defaultValue: string = ''): string {
   return value
 }
 
-function readPort() {
+function readPort(defaultValue: number = 3000): number {
   const value = process.env.PORT?.trim()
 
-  if (!value) return DEFAULT_PORT
+  if (!value) return defaultValue
 
   const port = Number(value)
 

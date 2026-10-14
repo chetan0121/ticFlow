@@ -3,16 +3,17 @@
   "private": true,
   "type": "module",
   "workspaces": [
+    "shared",
     "frontend",
     "backend"
   ],
   "scripts": {
     "dev": "bun run --filter '@ticflow/frontend' --filter '@ticflow/backend' --parallel dev",
-    "format": "bun run --cwd frontend format && bun run --cwd backend format",
-    "lint": "bun run --cwd frontend lint && bun run --cwd backend lint",
-    "ts-check": "bun run --cwd frontend ts-check && bun run --cwd backend ts-check",
-    "build": "bun run --cwd frontend build && bun run --cwd backend build",
-    "release": "bun run --cwd frontend release && bun run --cwd backend release",
+    "format": "bun run --cwd shared format && bun run --cwd frontend format && bun run --cwd backend format",
+    "lint": "bun run --cwd shared lint && bun run --cwd frontend lint && bun run --cwd backend lint",
+    "ts-check": "bun run --cwd shared ts-check && bun run --cwd frontend ts-check && bun run --cwd backend ts-check",
+    "build": "bun run --cwd shared build && bun run --cwd frontend build && bun run --cwd backend build",
+    "release": "bun run --cwd shared format && bun run --cwd shared lint && bun run --cwd shared build && bun run --cwd frontend release && bun run --cwd backend release",
     "preview": "bun run --filter '@ticflow/frontend' --filter '@ticflow/backend' --parallel preview"
   },
   "devDependencies": {

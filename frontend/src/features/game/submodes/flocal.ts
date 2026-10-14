@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { cloneGameState, createDefaultGameState } from "../constants";
-import { Engine } from "../engine/GameEngine";
-import type { BoardHookResult, GameConfig, GameState } from "../types";
+import {
+  cloneGameState,
+  createDefaultGameState,
+  GameEngine,
+  type GameState,
+} from "@ticflow/shared";
+import type { BoardHookResult, GameConfig } from "../types";
 
 const MINUTE_IN_MS = 60_000;
 
@@ -54,7 +58,11 @@ export function useFLocalBoard(config: GameConfig): BoardHookResult {
   const onCellClick = useCallback(
     (rowIndex: number, cellIndex: number) => {
       setGame((prev) => {
-        const newState = Engine.nextMove(prev, [rowIndex, cellIndex], config);
+        const newState = GameEngine.nextMove(
+          prev,
+          [rowIndex, cellIndex],
+          config,
+        );
         return newState ?? prev;
       });
     },
