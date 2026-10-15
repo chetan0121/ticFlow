@@ -11,7 +11,11 @@ import {
 import type { BoardHookResult, GameConfig } from "../types";
 
 const MINUTE_IN_MS = 60_000;
-const BOT_MOVE_DELAY_MS = 300;
+const BOT_DELAY_RANGES = {
+  easy: [250, 650],
+  medium: [500, 1_100],
+  hard: [800, 1_600],
+} as const;
 
 function createInitialGameState(timeLimit: GameConfig["timeLimit"]): GameState {
   const initialState = createDefaultGameState();
@@ -30,6 +34,14 @@ const bots = {
   medium: new TacticalBot(),
   hard: new MinimaxBot(),
 } as const;
+
+type BotDifficulty = keyof typeof bots;
+
+function getBotDelay(difficulty: BotDifficulty): number {
+  const [minimum, maximum] = BOT_DELAY_RANGES[difficulty];
+
+  return Math.floor(minimum + Math.random() * (maximum - minimum + 1));
+}
 
 export function useBotBoard(config: GameConfig): BoardHookResult {
   const [game, setGame] = useState(() =>
@@ -71,12 +83,14 @@ export function useBotBoard(config: GameConfig): BoardHookResult {
   useEffect(() => {
     if (game.status !== "playing" || game.baseGame.currentTurn !== "X") return;
 
+    const difficulty: BotDifficulty =
+      config.subMode in bots ? (config.subMode as BotDifficulty) : "easy";
     const timer = setTimeout(() => {
       setGame((prev) => {
-        const bot = bots[config.subMode as keyof typeof bots] ?? bots.easy;
+        const bot = bots[difficulty];
         return bot.nextMove(prev, config) ?? prev;
       });
-    }, BOT_MOVE_DELAY_MS);
+    }, getBotDelay(difficulty));
 
     return () => clearTimeout(timer);
   }, [config, game.baseGame.currentTurn, game.status]);

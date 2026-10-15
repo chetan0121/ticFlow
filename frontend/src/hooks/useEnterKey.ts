@@ -23,11 +23,18 @@ export function useEnterKey(
       if (event.key !== "Enter" || event.defaultPrevented) return;
 
       if (ignoreInputLike) {
-        const target = event.target;
+        const activeElement = document.activeElement;
         const isInputLike =
-          target instanceof HTMLInputElement ||
-          target instanceof HTMLTextAreaElement ||
-          (target instanceof HTMLElement && target.isContentEditable);
+          activeElement instanceof HTMLInputElement ||
+          activeElement instanceof HTMLTextAreaElement ||
+          activeElement instanceof HTMLSelectElement ||
+          activeElement instanceof HTMLButtonElement ||
+          activeElement instanceof HTMLAnchorElement ||
+          (activeElement instanceof HTMLElement &&
+            (activeElement.isContentEditable ||
+              activeElement.getAttribute("role") === "button" ||
+              activeElement.getAttribute("role") === "option" ||
+              activeElement.tabIndex >= 0));
 
         if (isInputLike) return;
       }

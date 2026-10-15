@@ -123,7 +123,7 @@ function OptionRow({
       tabIndex={-1}
       onClick={onClick}
       onKeyDown={(event) => onKeyDown(event, index)}
-      className={`group flex w-full items-center gap-3 rounded-xl border px-2.5 py-2.5 text-left transition-all duration-200 focus-visible:outline-none ${
+      className={`group flex w-full items-center gap-3 rounded-xl border px-2.5 py-2.5 text-left transition-all duration-200 focus-visible:border-amber-200/55 focus-visible:bg-white/6 focus-visible:ring-2 focus-visible:ring-amber-200/25 focus-visible:outline-none ${
         isSelected
           ? "border-amber-300/35 bg-amber-200/13 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
           : "border-transparent bg-transparent hover:border-white/10 hover:bg-white/6 focus-visible:border-amber-200/35 focus-visible:bg-white/6"
@@ -197,10 +197,13 @@ function MenuDropdown({ selection, text }: DropDownOptions) {
   const handleTriggerKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      openAndFocus(selectedIndex);
+      openAndFocus((selectedIndex + 1) % options.length);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      openAndFocus(options.length - 1);
+      openAndFocus((selectedIndex - 1 + options.length) % options.length);
+    } else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openAndFocus(selectedIndex);
     }
   };
 
