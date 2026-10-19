@@ -13,6 +13,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import AppRoutes from "../../../router/AppRoutes";
+import NotificationBar from "../../../components/NotificationBar";
 import { useAuth } from "../hooks/useAuth";
 import type { AuthMode } from "../types";
 
@@ -29,6 +30,7 @@ function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -46,7 +48,8 @@ function AuthForm() {
         await login(email, password);
       }
 
-      void navigate(AppRoutes.home.path);
+      setSuccess(isSignup ? "Account created successfully." : "Signed in successfully.");
+      window.setTimeout(() => void navigate(AppRoutes.home.path), 600);
     } catch (currentError) {
       setError(
         currentError instanceof Error
@@ -60,6 +63,17 @@ function AuthForm() {
 
   return (
     <section className="mx-auto flex h-full w-full max-w-5xl items-center justify-center py-5 font-['Montserrat'] sm:py-8">
+      {error ? (
+        <NotificationBar
+          type="error"
+          title="Authentication failed"
+          message={error}
+          onClose={() => setError("")}
+        />
+      ) : null}
+      {success ? (
+        <NotificationBar type="success" title={success} />
+      ) : null}
       <div className="grid w-full overflow-hidden rounded-2xl border border-white/14 bg-[hsl(24,28%,11%)]/86 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl md:grid-cols-[0.94fr_1.06fr]">
         <div className="relative hidden min-h-145 overflow-hidden border-r border-white/10 bg-[radial-gradient(circle_at_20%_18%,rgba(251,191,36,0.18),transparent_34%),linear-gradient(145deg,hsl(40,44%,18%),hsl(19,38%,11%))] md:block">
           <div className="absolute -top-20 -right-18 h-64 w-64 rounded-full bg-amber-300/12 blur-3xl" />
@@ -240,15 +254,6 @@ function AuthForm() {
                 </button>
               </div>
             </label>
-
-            {error && (
-              <div
-                role="alert"
-                className="rounded-xl border border-red-300/25 bg-red-400/10 px-4 py-3 text-sm leading-5 font-semibold text-red-100"
-              >
-                {error}
-              </div>
-            )}
 
             <button
               type="submit"
