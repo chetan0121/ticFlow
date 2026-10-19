@@ -82,8 +82,10 @@ const env = {
 }
 
 export function isOriginAllowed(origin: string | undefined): boolean {
-  if (env.debugMode && !origin) return true
-  else if (!origin) return false
+  // LAN origins vary by device, so development mode deliberately permits them.
+  // Keep DEBUG_MODE disabled outside local development.
+  if (env.debugMode) return true
+  if (!origin) return false
 
   if (env.frontendOrigins.includes(origin)) return true
 

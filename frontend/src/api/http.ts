@@ -9,7 +9,7 @@ const frontendEnv = import.meta.env as {
 };
 
 const configuredBackendUrl = frontendEnv.VITE_BACKEND_URL?.trim();
-const apiBaseUrl =
+export const apiBaseUrl =
   configuredBackendUrl ||
   `${globalThis.location.protocol}//${globalThis.location.hostname}:3000`;
 

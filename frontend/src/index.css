@@ -120,3 +120,67 @@
     opacity: 1;
   }
 }
+
+@keyframes your-turn-card {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(165, 243, 252, 0),
+      0 0 28px rgba(34, 211, 238, 0.12);
+  }
+  35% {
+    box-shadow:
+      0 0 0 4px rgba(165, 243, 252, 0.1),
+      0 0 36px rgba(34, 211, 238, 0.32);
+  }
+}
+
+@keyframes your-turn-pop {
+  0%,
+  55%,
+  100% {
+    transform: scale(1);
+  }
+  18% {
+    transform: scale(1.12) rotate(-2deg);
+  }
+  32% {
+    transform: scale(0.98) rotate(1deg);
+  }
+}
+
+@keyframes agreement-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(125, 211, 252, 0),
+      0 0 16px rgba(56, 189, 248, 0.16);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(125, 211, 252, 0.12),
+      0 0 34px rgba(56, 189, 248, 0.5);
+  }
+}
+
+@keyframes notification-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -0.75rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes notification-exit {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -0.5rem) scale(0.98);
+  }
+}
