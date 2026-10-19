@@ -13,7 +13,7 @@ function BoardGrid({ board, isLast, onCellClick }: GridProps) {
   return (
     <div className="mx-auto w-full max-w-[min(92vw,58vh,38rem)]">
       <div
-        className="grid aspect-square w-full gap-1.5 rounded-lg border border-white/15 bg-[rgba(7,5,4,0.52)] p-1.5 shadow-[0_26px_80px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm sm:gap-2.5 sm:p-2.5"
+        className="grid aspect-square w-full gap-1.5 rounded-2xl border border-amber-100/15 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(0,0,0,0.32))] p-1.5 shadow-[0_30px_90px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-sm sm:gap-2.5 sm:p-2.5"
         style={{
           gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
         }}

@@ -8,7 +8,13 @@ interface BasePageProps {
 
 function BasePage({ children }: BasePageProps) {
   return (
-    <div className="flex h-screen min-h-screen w-screen flex-col items-center justify-start overflow-x-hidden bg-linear-135 from-[hsl(18,36%,9%)] via-[hsl(34,34%,16%)] to-[hsl(48,28%,13%)]">
+    <div
+      className="flex h-screen min-h-screen w-screen flex-col items-center justify-start overflow-x-hidden"
+      style={{
+        backgroundImage:
+          "var(--ticflow-page-background, linear-gradient(135deg, hsl(18 36% 9%), hsl(34 34% 16%), hsl(48 28% 13%)))",
+      }}
+    >
       <div className="flex w-full items-center gap-3 px-6 pt-4 pb-3">
         <SidebarButton />
         <BackButton />

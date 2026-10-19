@@ -43,4 +43,19 @@ export interface BoardHookResult {
   status: GameStatus;
   timeLimit: RangeValue;
   winner: WinState;
+  online?: {
+    error: string | null;
+    inviteCode: string | null;
+    myMark: PlayerMark | null;
+    myName: string | null;
+    opponentName: string | null;
+    opponentConnected: boolean | null;
+    waitingForOpponent: boolean;
+    drawRequested: boolean;
+    opponentDrawRequested: boolean;
+    restartRequested: boolean;
+    opponentRestartRequested: boolean;
+    requestDraw: () => void;
+    dismissError: () => void;
+  };
 }

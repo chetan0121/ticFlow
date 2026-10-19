@@ -1,5 +1,5 @@
 import { ArrowLeft, Handshake, RotateCcw, Trophy, X } from "lucide-react";
-import type { WinState } from "../types";
+import type { PlayerMark, WinState } from "../types";
 
 export interface GameResultActions {
   back: () => void | Promise<void>;
@@ -11,9 +11,19 @@ interface GameResultPopupProps {
   actions: GameResultActions;
   open: boolean;
   winner: WinState;
+  myMark?: PlayerMark | null;
+  opponentName?: string | null;
+  backLabel?: string;
+  replayLabel?: string;
+  replayPending?: boolean;
+  replayAttention?: boolean;
 }
 
-function getResultContent(winner: WinState) {
+function getResultContent(
+  winner: WinState,
+  myMark?: PlayerMark | null,
+  opponentName?: string | null,
+) {
   if (winner === "draw") {
     return {
       Icon: Handshake,
@@ -21,7 +31,22 @@ function getResultContent(winner: WinState) {
       label: "No winner",
       tone: "border-amber-200/45 bg-amber-300/10 text-amber-100",
     };
-  } else if (winner === "O") {
+  }
+
+  if (myMark) {
+    const didWin = winner === myMark;
+
+    return {
+      Icon: Trophy,
+      title: didWin ? "You Won" : `${opponentName ?? "Opponent"} Won`,
+      label: didWin ? "Victory" : "Defeat",
+      tone: didWin
+        ? "border-emerald-300/45 bg-emerald-400/10 text-emerald-100"
+        : "border-red-300/45 bg-red-400/10 text-red-100",
+    };
+  }
+
+  if (winner === "O") {
     return {
       Icon: Trophy,
       title: "Player O Wins",
@@ -38,10 +63,24 @@ function getResultContent(winner: WinState) {
   };
 }
 
-function GameResultPopup({ actions, open, winner }: GameResultPopupProps) {
+function GameResultPopup({
+  actions,
+  open,
+  winner,
+  myMark,
+  opponentName,
+  backLabel = "Back",
+  replayLabel = "Replay",
+  replayPending = false,
+  replayAttention = false,
+}: GameResultPopupProps) {
   if (!open || winner === null) return null;
 
-  const { Icon, title, label, tone } = getResultContent(winner);
+  const { Icon, title, label, tone } = getResultContent(
+    winner,
+    myMark,
+    opponentName,
+  );
 
   return (
     <div
@@ -88,15 +127,20 @@ function GameResultPopup({ actions, open, winner }: GameResultPopupProps) {
               className="flex h-11 items-center justify-center gap-2 rounded-md border border-white/12 bg-white/6 px-3 font-['Montserrat'] text-sm font-semibold text-white/78 transition-colors hover:border-white/24 hover:bg-white/11 hover:text-white focus-visible:ring-2 focus-visible:ring-amber-200/45 focus-visible:outline-none"
             >
               <ArrowLeft className="h-4 w-4" strokeWidth={2.35} />
-              <span>Back</span>
+              <span>{backLabel}</span>
             </button>
             <button
               type="button"
               onClick={() => void actions.replay()}
-              className="flex h-11 items-center justify-center gap-2 rounded-md border border-amber-200/35 bg-amber-300/12 px-3 font-['Montserrat'] text-sm font-semibold text-amber-100 transition-colors hover:border-amber-100/55 hover:bg-amber-300/18 focus-visible:ring-2 focus-visible:ring-amber-200/55 focus-visible:outline-none"
+              disabled={replayPending}
+              className={`flex h-11 items-center justify-center gap-2 rounded-md border px-3 font-['Montserrat'] text-sm font-semibold transition-[color,background-color,border-color,box-shadow] focus-visible:ring-2 focus-visible:ring-sky-200/55 focus-visible:outline-none disabled:cursor-wait disabled:border-white/12 disabled:bg-white/6 disabled:text-white/45 ${
+                replayAttention
+                  ? "animate-[agreement-glow_1.65s_ease-in-out_infinite] border-sky-200/60 bg-sky-300/18 text-sky-50"
+                  : "border-amber-200/35 bg-amber-300/12 text-amber-100 hover:border-amber-100/55 hover:bg-amber-300/18"
+              }`}
             >
               <RotateCcw className="h-4 w-4" strokeWidth={2.35} />
-              <span>Replay</span>
+              <span>{replayPending ? "Restart requested" : replayLabel}</span>
             </button>
           </div>
         </div>

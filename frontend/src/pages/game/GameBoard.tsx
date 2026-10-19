@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Circle, Pause, Play, RotateCcw, X } from "lucide-react";
+import { Circle, Handshake, Pause, Play, RotateCcw, X } from "lucide-react";
 import BoardGrid from "../../features/game/components/Grid";
+import InviteCodePanel from "../../features/game/components/InviteCodePanel";
 import LeaveGameConfirm from "../../features/game/components/LeaveGameConfirm";
+import MutualActionButton from "../../features/game/components/MutualActionButton";
 import GameResultPopup from "../../features/game/components/ResultPopup";
+import NotificationBar from "../../components/NotificationBar";
 import PlayerTimer from "../../features/game/components/PlayerTimer";
 import useBoard from "../../features/game/hooks/useBoard";
 import { useGameActive } from "../../features/game/hooks/useGameActive";
@@ -21,10 +24,14 @@ function PlayerBadge({
   mark,
   active,
   won,
+  label,
+  turnCue,
 }: {
   mark: PlayerMark;
   active: boolean;
   won: boolean;
+  label: string;
+  turnCue: boolean;
 }) {
   const stateClass =
     active || won
@@ -32,26 +39,26 @@ function PlayerBadge({
       : "border-white/10 bg-black/18 text-white/48";
   const Icon = mark === "O" ? Circle : X;
 
-  const Name = "Player";
-
   return (
     <div
-      className={`relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-lg border px-3 py-2.5 transition-all duration-300 ${stateClass}`}
+      className={`relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-lg border px-3 py-2.5 transition-all duration-300 ${turnCue ? "animate-[your-turn-card_1.8s_ease-in-out_infinite]" : ""} ${stateClass}`}
     >
       <span
         className={`absolute inset-y-2 left-0 w-1 rounded-r-full transition-opacity ${
           active || won ? "opacity-100" : "opacity-0"
         } ${mark === "O" ? "bg-cyan-200" : "bg-rose-200"}`}
       />
-      <span className="flex items-center gap-2">
+      <span className="flex min-w-0 items-center gap-2">
         <Icon className="h-4 w-4 opacity-85" strokeWidth={2.4} />
-        <span className="mt-0.65 font-['Montserrat'] text-[10px] font-bold tracking-widest text-white/45 uppercase">
-          {Name}
+        <span className="truncate font-['Montserrat'] text-[9px] font-bold tracking-[0.14em] text-current/65 uppercase">
+          {label}
         </span>
       </span>
-      <span className="font-['Oswald'] text-2xl leading-none font-semibold">
-        {mark}
-      </span>
+      {turnCue ? (
+        <span className="animate-[your-turn-pop_1.8s_ease-out_infinite] rounded-full bg-current/15 px-2 py-1 font-['Montserrat'] text-[8px] font-black tracking-[0.12em] text-current uppercase">
+          Your turn
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -123,6 +130,7 @@ function GameBoard() {
     status,
     timeLimit,
     winner,
+    online,
   } = useBoard();
   const [showResultPopup, setShowResultPopup] = useState(false);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
@@ -208,93 +216,201 @@ function GameBoard() {
 
   const isPaused = status === "paused";
   const isGameActive = status === "playing";
+  const isWaitingForOpponent = Boolean(online?.waitingForOpponent);
   const canPause =
-    (status === "playing" || status === "paused") && winner === null;
+    !online && (status === "playing" || status === "paused") && winner === null;
+  const playerOrder: PlayerMark[] = online?.myMark
+    ? [online.myMark, online.myMark === "O" ? "X" : "O"]
+    : ["O", "X"];
+  const playerLabel = (mark: PlayerMark) => {
+    if (coreMode === "bot") return mark === "O" ? "YOU" : "BOT";
+
+    if (online?.myMark) {
+      if (online.myMark === mark) return `${online.myName ?? "Player"} (YOU)`;
+      return online.opponentName ?? "Opponent";
+    }
+    return mark === "O" ? "Player 1" : "Player 2";
+  };
+  const isCurrentUser = (mark: PlayerMark) =>
+    coreMode === "bot" ? mark === "O" : online?.myMark === mark;
+
+  const notification = online?.error
+    ? {
+        type: "error" as const,
+        title: "Something went wrong",
+        message: online.error,
+      }
+    : online?.opponentConnected === false
+      ? {
+          type: "info" as const,
+          title: "Opponent disconnected",
+          message: "Waiting for them to reconnect.",
+        }
+      : online?.opponentDrawRequested
+        ? {
+            type: "info" as const,
+            title: "Draw requested",
+            message: "Your opponent wants to end this game as a draw.",
+          }
+        : online?.opponentRestartRequested
+          ? {
+              type: "info" as const,
+              title: "Restart requested",
+              message: "Your opponent is ready for another game.",
+            }
+          : null;
+
+  const onlineAction = online
+    ? status !== "finished"
+      ? {
+          Icon: Handshake,
+          label: online.opponentDrawRequested
+            ? "Accept draw"
+            : online.drawRequested
+              ? "Draw requested"
+              : "Draw",
+          disabled: status !== "playing",
+          pending: online.drawRequested,
+          opponentRequested: online.opponentDrawRequested,
+          onClick: online.requestDraw,
+        }
+      : {
+          Icon: RotateCcw,
+          label: online.opponentRestartRequested
+            ? "Accept restart"
+            : online.restartRequested
+              ? "Restart requested"
+              : "Restart",
+          disabled: status !== "finished",
+          pending: online.restartRequested,
+          opponentRequested: online.opponentRestartRequested,
+          onClick: handleReplay,
+        }
+    : null;
+
+  useEffect(() => {
+    if (status !== "playing") return;
+
+    const page = document.documentElement;
+    page.style.setProperty(
+      "--ticflow-page-background",
+      currentTurn === "O"
+        ? "linear-gradient(135deg, hsl(194 62% 11%), hsl(205 42% 16%), hsl(27 31% 13%))"
+        : "linear-gradient(135deg, hsl(349 47% 12%), hsl(352 37% 17%), hsl(205 24% 14%))",
+    );
+
+    return () => {
+      page.style.removeProperty("--ticflow-page-background");
+    };
+  }, [currentTurn, status]);
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col items-center justify-center px-0 py-3 sm:py-5">
-      <div className="flex w-full max-w-[min(92vw,38rem)] flex-col gap-3 sm:gap-4">
-        <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-['Montserrat'] text-[10px] font-semibold tracking-[0.2em] text-amber-200/75 uppercase">
-              {coreModeLabel}
-            </p>
-            <h1 className="mt-1 truncate font-['Oswald'] text-3xl leading-none font-semibold text-white sm:text-4xl">
-              {subModeLabel}
-            </h1>
-          </div>
-          <div className="flex shrink-0 items-center">
-            <button
-              type="button"
-              onClick={handlePauseToggle}
-              disabled={!canPause}
-              className="group mr-2 flex h-11 items-center justify-center gap-2 rounded-lg border border-white/12 bg-black/18 px-3 font-['Montserrat'] text-xs font-bold text-white/72 transition-colors hover:border-cyan-200/35 hover:bg-cyan-200/10 hover:text-cyan-100 focus-visible:ring-2 focus-visible:ring-cyan-200/45 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-              aria-label={isPaused ? "Resume game" : "Pause game"}
-            >
-              {isPaused ? (
-                <Play
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  strokeWidth={2.4}
-                />
+      <div className="flex w-full max-w-[min(92vw,40rem)] flex-col gap-3 sm:gap-4">
+        {notification ? (
+          <NotificationBar
+            key={`${notification.type}-${notification.title}-${notification.message}`}
+            {...notification}
+            onClose={online?.error ? online.dismissError : undefined}
+          />
+        ) : null}
+        <header className="rounded-2xl border border-white/10 bg-black/15 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm sm:p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-['Montserrat'] text-[10px] font-semibold tracking-[0.2em] text-amber-200/75 uppercase">
+                {coreModeLabel}
+              </p>
+              <h1 className="mt-1 truncate font-['Oswald'] text-3xl leading-none font-semibold text-white sm:text-4xl">
+                {subModeLabel}
+              </h1>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {!online ? (
+                <button
+                  type="button"
+                  onClick={handlePauseToggle}
+                  disabled={!canPause}
+                  className="group flex h-10 items-center justify-center gap-2 rounded-lg border border-white/12 bg-black/18 px-3 font-['Montserrat'] text-xs font-bold text-white/72 transition-colors hover:border-cyan-200/35 hover:bg-cyan-200/10 hover:text-cyan-100 focus-visible:ring-2 focus-visible:ring-cyan-200/45 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label={isPaused ? "Resume game" : "Pause game"}
+                >
+                  {isPaused ? (
+                    <Play
+                      className="h-4 w-4"
+                      fill="currentColor"
+                      strokeWidth={2.4}
+                    />
+                  ) : (
+                    <Pause
+                      className="h-4 w-4"
+                      fill="currentColor"
+                      strokeWidth={2.4}
+                    />
+                  )}
+                  <span className="hidden min-[430px]:inline">
+                    {isPaused ? "Resume" : "Pause"}
+                  </span>
+                </button>
+              ) : null}
+              {onlineAction ? (
+                <MutualActionButton {...onlineAction} />
               ) : (
-                <Pause
-                  className="h-4 w-4"
-                  fill="currentColor"
-                  strokeWidth={2.4}
-                />
+                <button
+                  type="button"
+                  onClick={handleRestartRequest}
+                  className="group flex h-10 items-center justify-center gap-2 rounded-lg border border-white/12 bg-black/18 px-3 font-['Montserrat'] text-xs font-bold text-white/72 transition-colors hover:border-amber-200/35 hover:bg-amber-200/10 hover:text-amber-100 focus-visible:ring-2 focus-visible:ring-amber-200/45 focus-visible:outline-none"
+                  aria-label="Restart same game"
+                >
+                  <RotateCcw
+                    className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-45"
+                    strokeWidth={2.4}
+                  />
+                  <span className="hidden min-[430px]:inline">
+                    {winner ? "Replay" : "Restart"}
+                  </span>
+                </button>
               )}
-              <span className="hidden min-[430px]:inline">
-                {isPaused ? "Resume" : "Pause"}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={handleRestartRequest}
-              className="group flex h-11 items-center justify-center gap-2 rounded-lg border border-white/12 bg-black/18 px-3 font-['Montserrat'] text-xs font-bold text-white/72 transition-colors hover:border-amber-200/35 hover:bg-amber-200/10 hover:text-amber-100 focus-visible:ring-2 focus-visible:ring-amber-200/45 focus-visible:outline-none"
-              aria-label="Restart same game"
-            >
-              <RotateCcw
-                className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-45"
-                strokeWidth={2.4}
-              />
-              <span className="hidden min-[430px]:inline">
-                {winner ? "Replay" : "Restart"}
-              </span>
-            </button>
+            </div>
           </div>
-        </div>
+          {isWaitingForOpponent ? (
+            <div className="mt-4 border-t border-white/8 pt-3">
+              <InviteCodePanel inviteCode={online?.inviteCode ?? null} />
+            </div>
+          ) : null}
+        </header>
 
         <div className="grid grid-cols-2 items-stretch gap-2 sm:gap-3">
-          {timeLimit !== null ? (
-            <>
-              <PlayerTimer
-                mark="O"
-                remainingTime={players.O.remainingTime}
-                active={currentTurn === "O" && isGameActive && !winner}
-                winner={winner}
-              />
-              <PlayerTimer
-                mark="X"
-                remainingTime={players.X.remainingTime}
-                active={currentTurn === "X" && isGameActive && !winner}
-                winner={winner}
-              />
-            </>
-          ) : (
-            <>
-              <PlayerBadge
-                mark="O"
-                active={currentTurn === "O" && isGameActive && !winner}
-                won={winner === "O"}
-              />
-              <PlayerBadge
-                mark="X"
-                active={currentTurn === "X" && isGameActive && !winner}
-                won={winner === "X"}
-              />
-            </>
-          )}
+          {timeLimit !== null
+            ? playerOrder.map((mark) => (
+                <PlayerTimer
+                  key={mark}
+                  mark={mark}
+                  remainingTime={players[mark].remainingTime}
+                  active={currentTurn === mark && isGameActive && !winner}
+                  winner={winner}
+                  label={playerLabel(mark)}
+                  turnCue={
+                    isCurrentUser(mark) &&
+                    currentTurn === mark &&
+                    isGameActive &&
+                    !winner
+                  }
+                />
+              ))
+            : playerOrder.map((mark) => (
+                <PlayerBadge
+                  key={mark}
+                  mark={mark}
+                  active={currentTurn === mark && isGameActive && !winner}
+                  won={winner === mark}
+                  label={playerLabel(mark)}
+                  turnCue={
+                    isCurrentUser(mark) &&
+                    currentTurn === mark &&
+                    isGameActive &&
+                    !winner
+                  }
+                />
+              ))}
         </div>
       </div>
 
@@ -304,6 +420,18 @@ function GameBoard() {
           isLast={isLastMove}
           onCellClick={onCellClick}
         />
+        {isWaitingForOpponent ? (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-[rgba(11,27,32,0.42)] p-3 backdrop-blur-[2px]">
+            <div className="w-full max-w-sm rounded-xl border border-cyan-100/20 bg-[rgba(11,27,32,0.88)] px-5 py-4 text-center shadow-[0_18px_45px_rgba(0,0,0,0.4)]">
+              <p className="font-['Oswald'] text-2xl leading-none text-white">
+                Your board is ready
+              </p>
+              <p className="mt-2 text-sm text-white/65">
+                Share the invite code above to begin.
+              </p>
+            </div>
+          </div>
+        ) : null}
         {isPaused ? (
           <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/30 backdrop-blur-[1px]">
             <div className="rounded-lg border border-cyan-200/24 bg-black/55 px-4 py-3 text-center shadow-[0_18px_50px_rgba(0,0,0,0.42)]">
@@ -335,6 +463,12 @@ function GameBoard() {
         }}
         open={showResultPopup}
         winner={winner}
+        myMark={online?.myMark ?? null}
+        opponentName={online?.opponentName ?? null}
+        backLabel={online ? "Leave" : "Back"}
+        replayLabel={online ? "Restart" : "Replay"}
+        replayPending={online?.restartRequested ?? false}
+        replayAttention={online?.opponentRestartRequested ?? false}
       />
     </div>
   );

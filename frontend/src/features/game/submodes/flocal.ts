@@ -3,15 +3,14 @@ import {
   cloneGameState,
   createDefaultGameState,
   GameEngine,
+  MINUTE_MS,
   type GameState,
 } from "@ticflow/shared";
 import type { BoardHookResult, GameConfig } from "../types";
 
-const MINUTE_IN_MS = 60_000;
-
 function createInitialGameState(timeLimit: GameConfig["timeLimit"]): GameState {
   const initialState = createDefaultGameState();
-  const initialTime = timeLimit === null ? null : timeLimit * MINUTE_IN_MS;
+  const initialTime = timeLimit === null ? null : timeLimit * MINUTE_MS;
 
   initialState.baseGame.currentTurn = "O";
   initialState.status = "playing";

@@ -10,6 +10,7 @@ import {
   Zap,
 } from "lucide-react";
 import React, { type ReactElement } from "react";
+import { GAME_MOVE_LIMIT_RANGE, GAME_TIME_LIMIT_RANGE } from "@ticflow/shared";
 
 // Main modes
 export type CoreModes = "friend" | "bot" | "online";
@@ -146,12 +147,7 @@ export const GAME_TIME_CONTROLS = {
     label: "Player Timer",
     helper: "The time each player gets (in minutes)",
   } satisfies SetupText,
-  range: {
-    min: 1,
-    max: 960,
-    step: 1,
-    value: null,
-  } satisfies RangeParam,
+  range: GAME_TIME_LIMIT_RANGE satisfies RangeParam,
 };
 
 export const GAME_MOVE_LIMITS = {
@@ -159,10 +155,5 @@ export const GAME_MOVE_LIMITS = {
     label: "Move Cap",
     helper: "The total move limit before a draw",
   } satisfies SetupText,
-  range: {
-    min: 6,
-    max: 998,
-    step: 2,
-    value: null,
-  } satisfies RangeParam,
+  range: GAME_MOVE_LIMIT_RANGE satisfies RangeParam,
 };

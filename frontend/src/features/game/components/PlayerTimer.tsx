@@ -21,6 +21,8 @@ interface PlayerTimerProps {
   remainingTime: number | null;
   active: boolean;
   winner: WinState;
+  label?: string;
+  turnCue?: boolean;
 }
 
 function PlayerTimer({
@@ -28,6 +30,8 @@ function PlayerTimer({
   remainingTime,
   active,
   winner,
+  label = "Player",
+  turnCue = false,
 }: PlayerTimerProps) {
   const isWinner = winner === mark;
   const stateClass =
@@ -37,25 +41,37 @@ function PlayerTimer({
 
   return (
     <div
-      className={`relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-lg border px-3 py-2.5 transition-all duration-300 ${stateClass}`}
+      className={`relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-lg border px-3 py-2.5 transition-all duration-300 ${turnCue ? "animate-[your-turn-card_1.8s_ease-in-out_infinite]" : ""} ${stateClass}`}
     >
       <span
         className={`absolute inset-y-2 left-0 w-1 rounded-r-full transition-opacity ${
           active || isWinner ? "opacity-100" : "opacity-0"
         } ${mark === "O" ? "bg-cyan-200" : "bg-rose-200"}`}
       />
-      <div className="flex items-center gap-2">
-        <span className="font-['Oswald'] text-2xl leading-none font-semibold">
+      <div className="flex min-w-0 items-center gap-2">
+        <span
+          className="font-['Oswald'] text-2xl leading-none font-semibold"
+          aria-hidden="true"
+        >
           {mark}
         </span>
-        <Clock3
-          className="hidden h-4 w-4 opacity-80 min-[360px]:block"
-          strokeWidth={2.3}
-        />
+        <span className="min-w-0">
+          <span className="block truncate font-['Montserrat'] text-[9px] font-bold tracking-[0.14em] text-current/65 uppercase">
+            {label}
+          </span>
+          <Clock3 className="mt-0.5 h-3 w-3 opacity-65" strokeWidth={2.3} />
+        </span>
       </div>
-      <span className="font-['Montserrat'] text-sm leading-none font-bold tabular-nums min-[360px]:text-base sm:text-lg">
-        {formatTime(remainingTime)}
-      </span>
+      <div className="flex shrink-0 items-center gap-2">
+        {turnCue ? (
+          <span className="hidden animate-[your-turn-pop_1.8s_ease-out_infinite] rounded-full bg-current/15 px-1.5 py-1 font-['Montserrat'] text-[7px] font-black tracking-[0.12em] text-current uppercase min-[440px]:inline-flex">
+            Your turn
+          </span>
+        ) : null}
+        <span className="font-['Montserrat'] text-sm leading-none font-bold tabular-nums min-[360px]:text-base sm:text-lg">
+          {formatTime(remainingTime)}
+        </span>
+      </div>
     </div>
   );
 }

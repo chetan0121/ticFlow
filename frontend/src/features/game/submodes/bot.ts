@@ -3,6 +3,7 @@ import {
   cloneGameState,
   createDefaultGameState,
   GameEngine,
+  MINUTE_MS,
   MinimaxBot,
   RandomBot,
   TacticalBot,
@@ -10,7 +11,6 @@ import {
 } from "@ticflow/shared";
 import type { BoardHookResult, GameConfig } from "../types";
 
-const MINUTE_IN_MS = 60_000;
 const BOT_DELAY_RANGES = {
   easy: [250, 650],
   medium: [500, 1_100],
@@ -19,7 +19,7 @@ const BOT_DELAY_RANGES = {
 
 function createInitialGameState(timeLimit: GameConfig["timeLimit"]): GameState {
   const initialState = createDefaultGameState();
-  const initialTime = timeLimit === null ? null : timeLimit * MINUTE_IN_MS;
+  const initialTime = timeLimit === null ? null : timeLimit * MINUTE_MS;
 
   initialState.baseGame.currentTurn = "O";
   initialState.status = "playing";
