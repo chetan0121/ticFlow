@@ -48,7 +48,9 @@ function AuthForm() {
         await login(email, password);
       }
 
-      setSuccess(isSignup ? "Account created successfully." : "Signed in successfully.");
+      setSuccess(
+        isSignup ? "Account created successfully." : "Signed in successfully.",
+      );
       window.setTimeout(() => void navigate(AppRoutes.home.path), 600);
     } catch (currentError) {
       setError(
@@ -71,9 +73,7 @@ function AuthForm() {
           onClose={() => setError("")}
         />
       ) : null}
-      {success ? (
-        <NotificationBar type="success" title={success} />
-      ) : null}
+      {success ? <NotificationBar type="success" title={success} /> : null}
       <div className="grid w-full overflow-hidden rounded-2xl border border-white/14 bg-[hsl(24,28%,11%)]/86 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl md:grid-cols-[0.94fr_1.06fr]">
         <div className="relative hidden min-h-145 overflow-hidden border-r border-white/10 bg-[radial-gradient(circle_at_20%_18%,rgba(251,191,36,0.18),transparent_34%),linear-gradient(145deg,hsl(40,44%,18%),hsl(19,38%,11%))] md:block">
           <div className="absolute -top-20 -right-18 h-64 w-64 rounded-full bg-amber-300/12 blur-3xl" />

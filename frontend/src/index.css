@@ -166,21 +166,32 @@
 @keyframes notification-enter {
   from {
     opacity: 0;
-    transform: translate(-50%, -0.75rem) scale(0.98);
+    transform: translateY(-1rem);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, 0) scale(1);
+    transform: translateY(0);
   }
 }
 
 @keyframes notification-exit {
   from {
     opacity: 1;
-    transform: translate(-50%, 0) scale(1);
+    transform: translateY(0);
   }
   to {
     opacity: 0;
-    transform: translate(-50%, -0.5rem) scale(0.98);
+    transform: translateY(-0.75rem);
+  }
+}
+
+@keyframes notification-progress {
+  from {
+    transform: scaleX(1);
+    opacity: 0.85;
+  }
+  to {
+    transform: scaleX(0);
+    opacity: 0.3;
   }
 }

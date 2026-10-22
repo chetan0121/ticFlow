@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Circle, Handshake, Pause, Play, RotateCcw, X } from "lucide-react";
 import BoardGrid from "../../features/game/components/Grid";
+import ConfirmationDialog from "../../features/game/components/ConfirmationDialog";
 import InviteCodePanel from "../../features/game/components/InviteCodePanel";
 import LeaveGameConfirm from "../../features/game/components/LeaveGameConfirm";
 import MutualActionButton from "../../features/game/components/MutualActionButton";
@@ -9,6 +10,7 @@ import GameResultPopup from "../../features/game/components/ResultPopup";
 import NotificationBar from "../../components/NotificationBar";
 import PlayerTimer from "../../features/game/components/PlayerTimer";
 import useBoard from "../../features/game/hooks/useBoard";
+import { clearLocalGameState } from "../../features/game/hooks/useLocalBoard";
 import { useGameActive } from "../../features/game/hooks/useGameActive";
 import { useMenuContext } from "../../features/menu/hooks/useMenuContext";
 import { GAME_MODES, GAME_SUB_MODES } from "../../features/menu/constants";
@@ -63,58 +65,22 @@ function PlayerBadge({
   );
 }
 
-interface RestartConfirmProps {
-  onCancel: () => void;
-  onConfirm: () => void;
-  open: boolean;
-}
+function getOnlineErrorTitle(message: string): string {
+  if (message === "This room doesn't exist or is no longer available")
+    return "Room unavailable";
+  if (message === "This game is full") return "Game is full";
+  if (message === "This game is no longer available")
+    return "Game no longer available";
+  if (message === "Please sign in to play online.") return "Sign-in required";
+  if (message === "Game owner is unavailable") return "Game owner unavailable";
+  if (
+    message === "It is not your turn" ||
+    message === "It is not your turn yet."
+  )
+    return "Not your turn";
+  if (message === "The game has not started yet.") return "Game not started";
 
-function RestartConfirm({ onCancel, onConfirm, open }: RestartConfirmProps) {
-  if (!open) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/58 px-5 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="restart-confirm-title"
-    >
-      <div className="w-full max-w-95 overflow-hidden rounded-lg border border-white/14 bg-[hsl(26,34%,10%)] shadow-[0_26px_90px_rgba(0,0,0,0.58)]">
-        <div className="border-b border-amber-100/14 px-5 py-5">
-          <p className="font-['Montserrat'] text-[10px] font-bold tracking-[0.2em] text-amber-100/60 uppercase">
-            Restart game
-          </p>
-          <h2
-            id="restart-confirm-title"
-            className="mt-1 font-['Oswald'] text-3xl leading-none font-semibold text-white"
-          >
-            Start this game over?
-          </h2>
-          <p className="mt-3 text-sm leading-5 text-white/58">
-            Current moves and timers will reset.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 px-5 py-5">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="flex h-11 items-center justify-center rounded-md border border-white/12 bg-white/6 px-3 font-['Montserrat'] text-sm font-semibold text-white/78 transition-colors hover:border-white/24 hover:bg-white/11 hover:text-white focus-visible:ring-2 focus-visible:ring-amber-200/45 focus-visible:outline-none"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="flex h-11 items-center justify-center gap-2 rounded-md border border-amber-200/35 bg-amber-300/12 px-3 font-['Montserrat'] text-sm font-semibold text-amber-100 transition-colors hover:border-amber-100/55 hover:bg-amber-300/18 focus-visible:ring-2 focus-visible:ring-amber-200/55 focus-visible:outline-none"
-          >
-            <RotateCcw className="h-4 w-4" strokeWidth={2.35} />
-            Restart
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  return "Unable to join game";
 }
 
 function GameBoard() {
@@ -166,6 +132,14 @@ function GameBoard() {
   }, [setGameActive, shouldConfirmLeave]);
 
   useEffect(() => {
+    if (!online?.isUnavailable || !online.error) return;
+
+    void navigate(AppRoutes.gameMenu.path, {
+      state: { notification: online.error },
+    });
+  }, [navigate, online?.error, online?.isUnavailable]);
+
+  useEffect(() => {
     if (!shouldConfirmLeave) return;
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -183,10 +157,12 @@ function GameBoard() {
       return;
     }
 
+    if (!online) clearLocalGameState(subMode);
     void navigate(AppRoutes.gameMenu.path);
   }
 
   function leaveToMenu() {
+    if (!online) clearLocalGameState(subMode);
     setShowLeaveConfirm(false);
     void navigate(AppRoutes.gameMenu.path);
   }
@@ -223,7 +199,7 @@ function GameBoard() {
     ? [online.myMark, online.myMark === "O" ? "X" : "O"]
     : ["O", "X"];
   const playerLabel = (mark: PlayerMark) => {
-    if (coreMode === "bot") return mark === "O" ? "YOU" : "BOT";
+    if (coreMode === "bot") return mark === "O" ? "YOU" : `${subModeLabel} BOT`;
 
     if (online?.myMark) {
       if (online.myMark === mark) return `${online.myName ?? "Player"} (YOU)`;
@@ -233,11 +209,31 @@ function GameBoard() {
   };
   const isCurrentUser = (mark: PlayerMark) =>
     coreMode === "bot" ? mark === "O" : online?.myMark === mark;
+  const botMatchupTitle =
+    coreMode === "bot" ? `${subModeLabel} BOT VS YOU` : subModeLabel;
+  const matchup =
+    coreMode === "bot"
+      ? `${subModeLabel} BOT VS YOU`
+      : online?.myMark
+        ? `${online.myName ?? "YOU"} VS ${online.opponentName ?? "OPPONENT"}`
+        : "PLAYER 1 VS PLAYER 2";
+  const winnerName =
+    winner !== null && winner !== "draw"
+      ? coreMode === "bot"
+        ? winner === "O"
+          ? "YOU"
+          : `${subModeLabel} BOT`
+        : online?.myMark
+          ? winner === online.myMark
+            ? (online.myName ?? "YOU")
+            : (online.opponentName ?? "OPPONENT")
+          : playerLabel(winner)
+      : undefined;
 
   const notification = online?.error
     ? {
         type: "error" as const,
-        title: "Something went wrong",
+        title: getOnlineErrorTitle(online.error),
         message: online.error,
       }
     : online?.opponentConnected === false
@@ -306,14 +302,18 @@ function GameBoard() {
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col items-center justify-center px-0 py-3 sm:py-5">
-      <div className="flex w-full max-w-[min(92vw,40rem)] flex-col gap-3 sm:gap-4">
-        {notification ? (
-          <NotificationBar
-            key={`${notification.type}-${notification.title}-${notification.message}`}
-            {...notification}
-            onClose={online?.error ? online.dismissError : undefined}
-          />
-        ) : null}
+      {notification ? (
+        <NotificationBar
+          {...notification}
+          eventKey={online?.errorRevision}
+          onClose={online?.isUnavailable ? undefined : online?.dismissError}
+        />
+      ) : null}
+      <div
+        className={`flex w-full max-w-[min(92vw,40rem)] flex-col gap-3 sm:gap-4 ${
+          online?.isUnavailable ? "hidden" : ""
+        }`}
+      >
         <header className="rounded-2xl border border-white/10 bg-black/15 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm sm:p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -321,7 +321,7 @@ function GameBoard() {
                 {coreModeLabel}
               </p>
               <h1 className="mt-1 truncate font-['Oswald'] text-3xl leading-none font-semibold text-white sm:text-4xl">
-                {subModeLabel}
+                {botMatchupTitle}
               </h1>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -371,7 +371,7 @@ function GameBoard() {
               )}
             </div>
           </div>
-          {isWaitingForOpponent ? (
+          {online?.inviteCode ? (
             <div className="mt-4 border-t border-white/8 pt-3">
               <InviteCodePanel inviteCode={online?.inviteCode ?? null} />
             </div>
@@ -445,10 +445,17 @@ function GameBoard() {
           </div>
         ) : null}
       </div>
-      <RestartConfirm
+      <ConfirmationDialog
+        cancelLabel="Cancel"
+        confirmIcon={<RotateCcw className="h-4 w-4" strokeWidth={2.35} />}
+        confirmLabel="Restart"
+        description="Current moves and timers will reset."
+        id="restart-confirm-title"
+        kicker="Restart game"
         open={showRestartConfirm}
         onCancel={() => setShowRestartConfirm(false)}
         onConfirm={handleReplay}
+        title="Start this game over?"
       />
       <LeaveGameConfirm
         open={showLeaveConfirm}
@@ -463,8 +470,8 @@ function GameBoard() {
         }}
         open={showResultPopup}
         winner={winner}
-        myMark={online?.myMark ?? null}
-        opponentName={online?.opponentName ?? null}
+        winnerName={winnerName}
+        matchup={matchup}
         backLabel={online ? "Leave" : "Back"}
         replayLabel={online ? "Restart" : "Replay"}
         replayPending={online?.restartRequested ?? false}
