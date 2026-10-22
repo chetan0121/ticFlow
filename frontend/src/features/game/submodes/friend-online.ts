@@ -8,6 +8,9 @@ import {
 import { apiBaseUrl } from "../../../api/http";
 import type { BoardHookResult, GameConfig } from "../types";
 
+type CommandResponse = { error?: string };
+type GameResponse = CommandResponse & { game?: FriendGameSnapshot };
+
 function request<T>(
   socket: Socket,
   event: string,
@@ -38,9 +41,12 @@ function wasRequestedByOpponent(
 export function useFriendOnlineBoard(
   config: GameConfig,
   inviteCode: string | null,
+  gameId: string | null,
 ): BoardHookResult {
   const [snapshot, setSnapshot] = useState<FriendGameSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorRevision, setErrorRevision] = useState(0);
+  const [isUnavailable, setIsUnavailable] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -49,21 +55,38 @@ export function useFriendOnlineBoard(
 
     const loadGame = async () => {
       const response = inviteCode
-        ? await request<{ game?: FriendGameSnapshot; error?: string }>(
+        ? await request<GameResponse>(
             nextSocket,
             "friend-game:join",
             inviteCode,
           )
-        : await request<{ game?: FriendGameSnapshot; error?: string }>(
-            nextSocket,
-            "friend-game:create",
-            { timeLimit: config.timeLimit, moveLimit: config.moveLimit },
-          );
+        : gameId
+          ? await request<GameResponse>(nextSocket, "friend-game:resume", gameId)
+          : await request<GameResponse>(nextSocket, "friend-game:create", {
+              timeLimit: config.timeLimit,
+              moveLimit: config.moveLimit,
+            });
 
-      if (response.error) setError(response.error);
-      else if (response.game) setSnapshot(response.game);
+      if (response.error) {
+        setError(response.error);
+        setErrorRevision((revision) => revision + 1);
+        setIsUnavailable(true);
+      } else if (response.game) {
+        setSnapshot(response.game);
+        setError(null);
+        setIsUnavailable(false);
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set("game", response.game.id);
+        currentUrl.searchParams.set("code", response.game.inviteCode);
+        currentUrl.searchParams.delete("join");
+        window.history.replaceState({}, "", currentUrl);
+      }
     };
-    const showError = (message: string) => setError(message);
+    const showError = (message: string) => {
+      setError(message);
+      setErrorRevision((revision) => revision + 1);
+      setIsUnavailable(true);
+    };
 
     nextSocket.on("connect", () => void loadGame());
     nextSocket.on("friend-game:state", setSnapshot);
@@ -75,7 +98,7 @@ export function useFriendOnlineBoard(
       nextSocket.disconnect();
       socketRef.current = null;
     };
-  }, [config.moveLimit, config.timeLimit, inviteCode]);
+  }, [config.moveLimit, config.timeLimit, gameId, inviteCode]);
 
   const game = snapshot?.game ?? createDefaultGameState();
   const opponentMark = snapshot?.myMark === "O" ? "X" : "O";
@@ -89,19 +112,24 @@ export function useFriendOnlineBoard(
       if (!socket || !snapshot) return;
       if (snapshot.game.status !== "playing") {
         setError("The game has not started yet.");
+        setErrorRevision((revision) => revision + 1);
         return;
       }
       if (snapshot.myMark !== snapshot.game.baseGame.currentTurn) {
         setError("It is not your turn yet.");
+        setErrorRevision((revision) => revision + 1);
         return;
       }
 
-      void request<{ error?: string }>(socket, "friend-game:move", {
+      void request<CommandResponse>(socket, "friend-game:move", {
         gameId: snapshot.id,
         row,
         column,
       }).then((response) => {
-        if (response.error) setError(response.error);
+        if (response.error) {
+          setError(response.error);
+          setErrorRevision((revision) => revision + 1);
+        }
       });
     },
     [snapshot],
@@ -110,25 +138,29 @@ export function useFriendOnlineBoard(
   const replay = useCallback(() => {
     const socket = socketRef.current;
     if (!socket || !snapshot) return;
-    void request<{ error?: string }>(
+    void request<CommandResponse>(
       socket,
       "friend-game:rematch",
       snapshot.id,
     ).then((response) => {
-      if (response.error) setError(response.error);
+      if (response.error) {
+        setError(response.error);
+        setErrorRevision((revision) => revision + 1);
+      }
     });
   }, [snapshot]);
 
   const requestDraw = useCallback(() => {
     const socket = socketRef.current;
     if (!socket || !snapshot) return;
-    void request<{ error?: string }>(
-      socket,
-      "friend-game:draw",
-      snapshot.id,
-    ).then((response) => {
-      if (response.error) setError(response.error);
-    });
+    void request<CommandResponse>(socket, "friend-game:draw", snapshot.id).then(
+      (response) => {
+        if (response.error) {
+          setError(response.error);
+          setErrorRevision((revision) => revision + 1);
+        }
+      },
+    );
   }, [snapshot]);
 
   const myMark = snapshot?.myMark ?? null;
@@ -149,6 +181,8 @@ export function useFriendOnlineBoard(
       winner: game.winner,
       online: {
         error,
+        errorRevision,
+        isUnavailable,
         inviteCode: snapshot?.inviteCode ?? null,
         myMark,
         myName,
@@ -174,6 +208,8 @@ export function useFriendOnlineBoard(
     [
       config.timeLimit,
       error,
+      errorRevision,
+      isUnavailable,
       game,
       myName,
       myMark,

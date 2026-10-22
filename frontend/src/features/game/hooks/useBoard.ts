@@ -10,6 +10,7 @@ import { useFriendOnlineBoard } from "../submodes/friend-online";
 type BoardSubModeHook = (
   config: GameConfig,
   inviteCode: string | null,
+  gameId: string | null,
 ) => BoardHookResult;
 
 const BOARD_SUB_MODE_HOOKS: Partial<Record<SubModes, BoardSubModeHook>> = {
@@ -23,6 +24,8 @@ const BOARD_SUB_MODE_HOOKS: Partial<Record<SubModes, BoardSubModeHook>> = {
 function useBoard(): BoardHookResult {
   const { state } = useMenuContext();
   const [searchParams] = useSearchParams();
+  const inviteCode = searchParams.get("code") ?? searchParams.get("join");
+  const gameId = searchParams.get("game");
   const config = useMemo<GameConfig>(
     () => ({
       subMode: state.subMode,
@@ -32,12 +35,17 @@ function useBoard(): BoardHookResult {
     [state.moveLimit, state.subMode, state.timeControl],
   );
 
-  const useSubModeBoard = BOARD_SUB_MODE_HOOKS[state.subMode];
+  const useSubModeBoard =
+    gameId || inviteCode ? useFriendOnlineBoard : BOARD_SUB_MODE_HOOKS[state.subMode];
 
   if (!useSubModeBoard)
     throw new Error(`Unsupported game submode: ${state.subMode}`);
 
-  return useSubModeBoard(config, searchParams.get("join"));
+  return useSubModeBoard(
+    config,
+    inviteCode,
+    gameId,
+  );
 }
 
 export default useBoard;

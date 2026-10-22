@@ -45,6 +45,8 @@ export interface BoardHookResult {
   winner: WinState;
   online?: {
     error: string | null;
+    errorRevision: number;
+    isUnavailable: boolean;
     inviteCode: string | null;
     myMark: PlayerMark | null;
     myName: string | null;

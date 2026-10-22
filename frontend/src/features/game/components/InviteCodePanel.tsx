@@ -1,8 +1,40 @@
 import { Check, Copy, Link2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { VALID_INVITE_CODE_LENGTH } from "@ticflow/shared";
 
 interface InviteCodePanelProps {
   inviteCode: string | null;
+}
+
+async function copyText(text: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch {
+      // Fall back for browsers that expose Clipboard API without allowing it.
+    }
+  }
+
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.top = "0";
+  textArea.style.left = "0";
+  textArea.style.opacity = "0";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  textArea.setSelectionRange(0, textArea.value.length);
+
+  try {
+    if (!document.execCommand("copy")) {
+      throw new Error("The browser rejected the copy request");
+    }
+  } finally {
+    document.body.removeChild(textArea);
+  }
 }
 
 function InviteCodePanel({ inviteCode }: InviteCodePanelProps) {
@@ -23,7 +55,7 @@ function InviteCodePanel({ inviteCode }: InviteCodePanelProps) {
     setCopyFailed(false);
 
     try {
-      await navigator.clipboard.writeText(inviteCode);
+      await copyText(inviteCode);
       setCopied(true);
     } catch {
       setCopyFailed(true);
@@ -60,7 +92,7 @@ function InviteCodePanel({ inviteCode }: InviteCodePanelProps) {
             title={inviteCode ? "Copy invite code" : "Connecting"}
           >
             <span className="font-['Oswald'] text-base font-semibold tracking-[0.14em] text-white">
-              {inviteCode ?? "----"}
+              {inviteCode ?? "-".repeat(VALID_INVITE_CODE_LENGTH)}
             </span>
             {copied ? (
               <Check

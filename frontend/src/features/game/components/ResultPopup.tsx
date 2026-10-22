@@ -1,5 +1,5 @@
 import { ArrowLeft, Handshake, RotateCcw, Trophy, X } from "lucide-react";
-import type { PlayerMark, WinState } from "../types";
+import type { WinState } from "../types";
 
 export interface GameResultActions {
   back: () => void | Promise<void>;
@@ -11,8 +11,8 @@ interface GameResultPopupProps {
   actions: GameResultActions;
   open: boolean;
   winner: WinState;
-  myMark?: PlayerMark | null;
-  opponentName?: string | null;
+  winnerName?: string | undefined;
+  matchup?: string | undefined;
   backLabel?: string;
   replayLabel?: string;
   replayPending?: boolean;
@@ -21,8 +21,7 @@ interface GameResultPopupProps {
 
 function getResultContent(
   winner: WinState,
-  myMark?: PlayerMark | null,
-  opponentName?: string | null,
+  winnerName?: string,
 ) {
   if (winner === "draw") {
     return {
@@ -33,33 +32,14 @@ function getResultContent(
     };
   }
 
-  if (myMark) {
-    const didWin = winner === myMark;
-
-    return {
-      Icon: Trophy,
-      title: didWin ? "You Won" : `${opponentName ?? "Opponent"} Won`,
-      label: didWin ? "Victory" : "Defeat",
-      tone: didWin
-        ? "border-emerald-300/45 bg-emerald-400/10 text-emerald-100"
-        : "border-red-300/45 bg-red-400/10 text-red-100",
-    };
-  }
-
-  if (winner === "O") {
-    return {
-      Icon: Trophy,
-      title: "Player O Wins",
-      label: "Winner",
-      tone: "border-cyan-300/45 bg-cyan-400/10 text-cyan-100",
-    };
-  }
-
   return {
     Icon: Trophy,
-    title: "Player X Wins",
+    title: `${winnerName ?? "Winner"} Wins`,
     label: "Winner",
-    tone: "border-rose-300/45 bg-rose-400/10 text-rose-100",
+    tone:
+      winner === "O"
+        ? "border-cyan-300/45 bg-cyan-400/10 text-cyan-100"
+        : "border-rose-300/45 bg-rose-400/10 text-rose-100",
   };
 }
 
@@ -67,8 +47,8 @@ function GameResultPopup({
   actions,
   open,
   winner,
-  myMark,
-  opponentName,
+  winnerName,
+  matchup,
   backLabel = "Back",
   replayLabel = "Replay",
   replayPending = false,
@@ -78,8 +58,7 @@ function GameResultPopup({
 
   const { Icon, title, label, tone } = getResultContent(
     winner,
-    myMark,
-    opponentName,
+    winnerName,
   );
 
   return (
@@ -116,6 +95,11 @@ function GameResultPopup({
             >
               {title}
             </h2>
+            {matchup ? (
+              <p className="mt-3 font-['Montserrat'] text-[10px] font-bold tracking-[0.2em] text-white/65 uppercase">
+                {matchup}
+              </p>
+            ) : null}
           </div>
         </div>
 
