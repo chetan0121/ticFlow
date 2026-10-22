@@ -38,13 +38,13 @@ export function errorHandler(
   }
 
   // Unexpected errors
-  const message = !env.debugMode
+  const message = !env.devMode
     ? 'Internal server error'
     : error instanceof Error
       ? error.message
       : String(error)
 
-  if (env.debugMode) {
+  if (env.devMode) {
     console.error('[errorHandler]', error)
   }
 

@@ -18,6 +18,11 @@ export function getNewApp() {
   app.use(
     cors({
       origin: (origin, callback) => {
+        if (!origin) {
+          callback(null, false)
+          return
+        }
+
         if (isOriginAllowed(origin)) {
           callback(null, true)
         } else {

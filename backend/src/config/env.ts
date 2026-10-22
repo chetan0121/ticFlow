@@ -52,16 +52,6 @@ function cleanRepeated(values: string[]): string[] {
   return Array.from(new Set(values))
 }
 
-function readCookieSameSite(): 'lax' | 'strict' | 'none' {
-  const value = process.env.COOKIE_SAME_SITE?.trim().toLowerCase() || 'lax'
-
-  if (value !== 'lax' && value !== 'strict' && value !== 'none') {
-    throw new Error('COOKIE_SAME_SITE must be lax, strict, or none')
-  }
-
-  return value
-}
-
 function fetchMongoURI(): string {
   const uri = fetchEnv('MONGODB_URI')
   const dbName = fetchEnv('MONGODB_DB_NAME')
@@ -71,30 +61,41 @@ function fetchMongoURI(): string {
 }
 
 const env = {
-  debugMode: readBooleanEnv('DEBUG_MODE'),
+  devMode: readBooleanEnv('DEV_MODE'),
   port: readPort(),
   frontendOrigins: cleanRepeated(readListEnv('FRONTEND_ORIGINS')),
   dnsServers: cleanRepeated(readListEnv('DNS_SERVERS')),
   mongoUri: fetchMongoURI(),
   jwtSecret: fetchEnv('JWT_SECRET'),
-  cookieSecure: readBooleanEnv('COOKIE_SECURE'),
-  cookieSameSite: readCookieSameSite(),
+}
+
+if (!env.devMode) {
+  if (env.frontendOrigins.length === 0) {
+    throw new Error('FRONTEND_ORIGINS must include an HTTPS origin when DEV_MODE=false')
+  }
+
+  for (const origin of env.frontendOrigins) {
+    let parsedOrigin: URL
+    try {
+      parsedOrigin = new URL(origin)
+    } catch {
+      throw new Error(`FRONTEND_ORIGINS contains an invalid origin: ${origin}`)
+    }
+
+    if (parsedOrigin.protocol !== 'https:' || parsedOrigin.origin !== origin) {
+      throw new Error(
+        `FRONTEND_ORIGINS must contain exact HTTPS origins in production: ${origin}`
+      )
+    }
+  }
 }
 
 export function isOriginAllowed(origin: string | undefined): boolean {
-  // LAN origins vary by device, so development mode deliberately permits them.
-  // Keep DEBUG_MODE disabled outside local development.
-  if (env.debugMode) return true
+  // Development mode deliberately permits LAN and local origins.
+  if (env.devMode) return true
   if (!origin) return false
 
-  if (env.frontendOrigins.includes(origin)) return true
-
-  try {
-    const hostname = new URL(origin).hostname.toLowerCase()
-    return hostname === 'localhost' || hostname === '127.0.0.1'
-  } catch {
-    return false
-  }
+  return env.frontendOrigins.includes(origin)
 }
 
 export default env

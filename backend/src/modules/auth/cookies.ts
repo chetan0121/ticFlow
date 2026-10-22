@@ -7,8 +7,8 @@ function getCookieOptions(): CookieOptions {
   return {
     httpOnly: true,
     path: '/',
-    sameSite: env.cookieSameSite,
-    secure: env.cookieSecure,
+    sameSite: 'none',
+    secure: !env.devMode,
   }
 }
 

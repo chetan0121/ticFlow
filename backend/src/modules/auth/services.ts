@@ -23,6 +23,21 @@ function isDuplicateKeyError(error: unknown): boolean {
   )
 }
 
+function duplicateKeyMessage(error: unknown): string {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'keyPattern' in error &&
+    error.keyPattern &&
+    typeof error.keyPattern === 'object' &&
+    'email' in error.keyPattern
+  ) {
+    return 'Email already exists'
+  }
+
+  return 'Username already exists'
+}
+
 function isValidObjectId(value: string): boolean {
   return mongoose.Types.ObjectId.isValid(value)
 }
@@ -72,13 +87,11 @@ async function issueSession(userId: string): Promise<SessionToken> {
 }
 
 export async function signup(input: SignupInput): Promise<AuthResult> {
-  const existing = await User.exists({
-    $or: [{ email: input.email }, { username: input.username }],
-  })
+  const existingEmail = await User.exists({ email: input.email })
+  if (existingEmail) throw HttpError.conflict('Email already exists')
 
-  if (existing) {
-    throw HttpError.conflict('Username or email already in use')
-  }
+  const existingUsername = await User.exists({ username: input.username })
+  if (existingUsername) throw HttpError.conflict('Username already exists')
 
   const password = await hashPassword(input.password)
   let user
@@ -92,7 +105,7 @@ export async function signup(input: SignupInput): Promise<AuthResult> {
   } catch (error) {
     // A concurrent signup can win the unique index race after the check above.
     if (isDuplicateKeyError(error)) {
-      throw HttpError.conflict('Username or email already in use')
+      throw HttpError.conflict(duplicateKeyMessage(error))
     }
 
     throw error
@@ -121,8 +134,13 @@ export async function login(input: LoginInput): Promise<AuthResult> {
   const hash = user?.password ?? (await getDecoyHash())
   const matches = await verifyPassword(hash, input.password)
 
-  if (!user || !matches) {
-    throw HttpError.unauthorized('Invalid credentials')
+  if (!user) {
+    const identifierType = input.identifier.includes('@') ? 'Email' : 'Username'
+    throw HttpError.unauthorized(`${identifierType} doesn't exist`)
+  }
+
+  if (!matches) {
+    throw HttpError.unauthorized('Invalid password')
   }
 
   return { user: toPublicUser(user), ...(await issueSession(user._id.toString())) }
