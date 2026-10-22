@@ -7,8 +7,8 @@
     "format": "prettier --write \"**/*.{ts,js,json,md}\" --ignore-path ../.gitignore",
     "lint": "eslint . --max-warnings 0",
     "ts-check": "tsc -p tsconfig.json --noEmit",
-    "build": "tsc -b",
-    "release": "prettier --write \"**/*.{ts,js,json,md}\" --ignore-path ../.gitignore && eslint . && tsc -b",
+    "build": "tsc -b --force",
+    "release": "prettier --write \"**/*.{ts,js,json,md}\" --ignore-path ../.gitignore && eslint . && tsc -b --force",
     "preview": "bun dist/server.js"
   },
   "dependencies": {

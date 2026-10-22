@@ -36,16 +36,14 @@ function useBoard(): BoardHookResult {
   );
 
   const useSubModeBoard =
-    gameId || inviteCode ? useFriendOnlineBoard : BOARD_SUB_MODE_HOOKS[state.subMode];
+    gameId || inviteCode
+      ? useFriendOnlineBoard
+      : BOARD_SUB_MODE_HOOKS[state.subMode];
 
   if (!useSubModeBoard)
     throw new Error(`Unsupported game submode: ${state.subMode}`);
 
-  return useSubModeBoard(
-    config,
-    inviteCode,
-    gameId,
-  );
+  return useSubModeBoard(config, inviteCode, gameId);
 }
 
 export default useBoard;

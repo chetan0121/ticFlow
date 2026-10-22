@@ -61,7 +61,11 @@ export function useFriendOnlineBoard(
             inviteCode,
           )
         : gameId
-          ? await request<GameResponse>(nextSocket, "friend-game:resume", gameId)
+          ? await request<GameResponse>(
+              nextSocket,
+              "friend-game:resume",
+              gameId,
+            )
           : await request<GameResponse>(nextSocket, "friend-game:create", {
               timeLimit: config.timeLimit,
               moveLimit: config.moveLimit,

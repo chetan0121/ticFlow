@@ -19,10 +19,7 @@ interface GameResultPopupProps {
   replayAttention?: boolean;
 }
 
-function getResultContent(
-  winner: WinState,
-  winnerName?: string,
-) {
+function getResultContent(winner: WinState, winnerName?: string) {
   if (winner === "draw") {
     return {
       Icon: Handshake,
@@ -56,10 +53,7 @@ function GameResultPopup({
 }: GameResultPopupProps) {
   if (!open || winner === null) return null;
 
-  const { Icon, title, label, tone } = getResultContent(
-    winner,
-    winnerName,
-  );
+  const { Icon, title, label, tone } = getResultContent(winner, winnerName);
 
   return (
     <div

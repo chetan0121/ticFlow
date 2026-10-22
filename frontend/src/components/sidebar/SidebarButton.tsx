@@ -2,9 +2,7 @@ import { SidebarOpen } from "lucide-react";
 import { useState } from "react";
 import SidebarPanel from "./SidebarPanel";
 import { useOutsideClick } from "../../hooks/useOutsideClick";
-import NotificationBar, {
-  type NotificationType,
-} from "../NotificationBar";
+import NotificationBar, { type NotificationType } from "../NotificationBar";
 
 function SidebarButton() {
   const { ref, isOpen, open, close } = useOutsideClick();
