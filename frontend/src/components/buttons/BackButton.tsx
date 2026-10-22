@@ -4,6 +4,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import AppRoutes from "../../router/AppRoutes";
 import LeaveGameConfirm from "../../features/game/components/LeaveGameConfirm";
 import { useGameActive } from "../../features/game/hooks/useGameActive";
+import { clearLocalGameState } from "../../features/game/hooks/useLocalBoard";
+import { useMenuContext } from "../../features/menu/hooks/useMenuContext";
 
 const BACK_TARGETS: Partial<Record<string, string>> = {
   [AppRoutes.gameMenu.path]: AppRoutes.home.path,
@@ -15,12 +17,19 @@ function BackButton() {
   const navigate = useNavigate();
   const [isGameActive] = useGameActive();
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const {
+    state: { coreMode, subMode },
+  } = useMenuContext();
   const targetPath = BACK_TARGETS[pathname];
 
   if (!targetPath) return null;
 
   function goBack() {
     if (!targetPath) return;
+
+    if (pathname === AppRoutes.gameBoard.path && coreMode !== "online") {
+      clearLocalGameState(subMode);
+    }
 
     setShowLeaveConfirm(false);
     void navigate(targetPath);
