@@ -5,9 +5,11 @@ import {
   GAME_MOVE_LIMIT_MIN,
   GAME_TIME_LIMIT_MINUTES_MAX,
   GAME_TIME_LIMIT_MINUTES_MIN,
+  VALID_INVITE_CODE_LENGTH,
   MINUTE_MS,
   GameEngine,
   createDefaultGameState,
+  FRIEND_GAME_DISCONNECT_GRACE_MS,
 } from '@ticflow/shared'
 import type {
   CreateFriendGameResult,
@@ -21,6 +23,7 @@ import type {
 import type { Server, Socket } from 'socket.io'
 
 import { AUTH_COOKIE_NAME } from '../../config/constants.js'
+import FriendGame from '../../db/models/friend-game.js'
 import { getSession } from '../auth/services.js'
 
 const ROOM_PREFIX = 'friend-game:'
@@ -40,6 +43,7 @@ interface FriendGameRoom {
   drawRequestedBy: Set<PlayerMark>
   rematchRequestedBy: Set<PlayerMark>
   lastClockUpdateAt: number
+  disconnectTimer?: ReturnType<typeof setTimeout> | undefined
 }
 
 type Ack<T extends SocketCommandResult = SocketCommandResult> = (result: T) => void
@@ -94,7 +98,7 @@ function createGameState(config: GameConfig, playerOId: string, playerXId = ''):
 function makeInviteCode(): string {
   let code: string
   do {
-    code = randomBytes(4).toString('hex').toUpperCase()
+    code = randomBytes(3).toString('hex').toUpperCase()
   } while (roomIdByInviteCode.has(code))
   return code
 }
@@ -136,9 +140,88 @@ function sendState(io: Server, room: FriendGameRoom): void {
   }
 }
 
-function removeRoom(room: FriendGameRoom): void {
+async function removeRoom(room: FriendGameRoom): Promise<void> {
+  if (room.disconnectTimer) clearTimeout(room.disconnectTimer)
   roomsById.delete(room.id)
   roomIdByInviteCode.delete(room.inviteCode)
+  await FriendGame.deleteOne({ gameId: room.id })
+}
+
+async function persistRoom(room: FriendGameRoom): Promise<void> {
+  await FriendGame.findOneAndUpdate(
+    { gameId: room.id },
+    {
+      gameId: room.id,
+      inviteCode: room.inviteCode,
+      config: room.config,
+      game: room.game,
+      playerIds: room.playerIds,
+      playerNames: room.playerNames,
+      drawRequestedBy: Array.from(room.drawRequestedBy),
+      rematchRequestedBy: Array.from(room.rematchRequestedBy),
+      lastClockUpdateAt: room.lastClockUpdateAt,
+    },
+    { upsert: true, setDefaultsOnInsert: true }
+  )
+}
+
+function roomFromDocument(document: {
+  gameId: string
+  inviteCode: string
+  config: GameConfig
+  game: GameState
+  playerIds: Partial<Record<PlayerMark, string>>
+  playerNames: Partial<Record<PlayerMark, string>>
+  drawRequestedBy: PlayerMark[]
+  rematchRequestedBy: PlayerMark[]
+  lastClockUpdateAt: number
+}): FriendGameRoom {
+  return {
+    id: document.gameId,
+    inviteCode: document.inviteCode,
+    config: document.config,
+    game: document.game,
+    playerIds: document.playerIds,
+    playerNames: document.playerNames,
+    connectedUserIds: new Set(),
+    drawRequestedBy: new Set(document.drawRequestedBy),
+    rematchRequestedBy: new Set(document.rematchRequestedBy),
+    lastClockUpdateAt: document.lastClockUpdateAt,
+  }
+}
+
+async function loadRoomById(gameId: string): Promise<FriendGameRoom | undefined> {
+  const inMemory = roomsById.get(gameId)
+  if (inMemory) return inMemory
+
+  const document = await FriendGame.findOne({ gameId }).lean()
+  if (!document) return undefined
+
+  const room = roomFromDocument({
+    ...document,
+    drawRequestedBy: document.drawRequestedBy as PlayerMark[],
+    rematchRequestedBy: document.rematchRequestedBy as PlayerMark[],
+  })
+  roomsById.set(room.id, room)
+  roomIdByInviteCode.set(room.inviteCode, room.id)
+  return room
+}
+
+async function loadRoomByInviteCode(inviteCode: string): Promise<FriendGameRoom | undefined> {
+  const mappedId = roomIdByInviteCode.get(inviteCode)
+  if (mappedId) return loadRoomById(mappedId)
+
+  const document = await FriendGame.findOne({ inviteCode }).lean()
+  if (!document) return undefined
+
+  const room = roomFromDocument({
+    ...document,
+    drawRequestedBy: document.drawRequestedBy as PlayerMark[],
+    rematchRequestedBy: document.rematchRequestedBy as PlayerMark[],
+  })
+  roomsById.set(room.id, room)
+  roomIdByInviteCode.set(room.inviteCode, room.id)
+  return room
 }
 
 function updateClock(room: FriendGameRoom): boolean {
@@ -165,12 +248,12 @@ function assertGameId(value: unknown): string | null {
   return typeof value === 'string' && /^[0-9a-f-]{36}$/i.test(value) ? value : null
 }
 
-function joinSocketRoom(socket: Socket, gameId: string): void {
+async function joinSocketRoom(socket: Socket, gameId: string): Promise<void> {
   for (const joinedRoom of socket.rooms) {
     if (joinedRoom.startsWith(ROOM_PREFIX) && joinedRoom !== roomName(gameId))
-      void socket.leave(joinedRoom)
+      await socket.leave(joinedRoom)
   }
-  void socket.join(roomName(gameId))
+  await socket.join(roomName(gameId))
 }
 
 function resetForRematch(room: FriendGameRoom): void {
@@ -181,6 +264,28 @@ function resetForRematch(room: FriendGameRoom): void {
   room.drawRequestedBy.clear()
   room.rematchRequestedBy.clear()
   room.lastClockUpdateAt = Date.now()
+}
+
+function resetForWaiting(room: FriendGameRoom, remainingUser: ConnectedUser): void {
+  room.playerIds = { O: remainingUser.id }
+  room.playerNames = { O: remainingUser.username }
+  room.game = createGameState(room.config, remainingUser.id)
+  room.drawRequestedBy.clear()
+  room.rematchRequestedBy.clear()
+  room.lastClockUpdateAt = Date.now()
+}
+
+async function finishAfterDisconnect(room: FriendGameRoom, io: Server): Promise<void> {
+  if (room.connectedUserIds.size !== 1 || room.game.status !== 'playing') return
+
+  const remainingUserId = Array.from(room.connectedUserIds)[0]
+  const remainingMark = remainingUserId ? getMark(room, remainingUserId) : null
+  if (!remainingMark) return
+
+  room.game.winner = remainingMark
+  room.game.status = 'finished'
+  await persistRoom(room)
+  sendState(io, room)
 }
 
 export function attachFriendGameSocket(io: Server): void {
@@ -205,7 +310,7 @@ export function attachFriendGameSocket(io: Server): void {
 
     socket.on(
       'friend-game:create',
-      (config: unknown, acknowledge: Ack<CreateFriendGameResult>) => {
+      async (config: unknown, acknowledge: Ack<CreateFriendGameResult>) => {
         if (!isGameConfig(config)) return acknowledge({ error: 'Invalid game settings' })
 
         const id = randomUUID()
@@ -223,30 +328,70 @@ export function attachFriendGameSocket(io: Server): void {
         }
         roomsById.set(id, room)
         roomIdByInviteCode.set(room.inviteCode, id)
-        joinSocketRoom(socket, id)
+        try {
+          await joinSocketRoom(socket, id)
+          await persistRoom(room)
+          acknowledge({ game: snapshot(room, user.id) })
+        } catch (error) {
+          console.error('Unable to create friend game', error)
+          roomsById.delete(id)
+          roomIdByInviteCode.delete(room.inviteCode)
+          acknowledge({ error: 'Unable to create the game. Please try again.' })
+        }
+      }
+    )
+
+    socket.on(
+      'friend-game:resume',
+      async (gameId: unknown, acknowledge: Ack<JoinFriendGameResult>) => {
+        const room = typeof gameId === 'string' ? await loadRoomById(gameId) : undefined
+        const mark = room ? getMark(room, user.id) : null
+        if (!room || !mark) return acknowledge({ error: 'This game is no longer available' })
+
+        if (room.disconnectTimer) {
+          clearTimeout(room.disconnectTimer)
+          room.disconnectTimer = undefined
+        }
+        room.connectedUserIds.add(user.id)
+        await joinSocketRoom(socket, room.id)
+        await persistRoom(room)
         acknowledge({ game: snapshot(room, user.id) })
+        sendState(io, room)
       }
     )
 
     socket.on(
       'friend-game:join',
-      (inviteCode: unknown, acknowledge: Ack<JoinFriendGameResult>) => {
+      async (inviteCode: unknown, acknowledge: Ack<JoinFriendGameResult>) => {
         const normalizedCode =
           typeof inviteCode === 'string' ? inviteCode.trim().toUpperCase() : ''
-        const gameId = roomIdByInviteCode.get(normalizedCode)
-        const room = gameId ? roomsById.get(gameId) : undefined
-        if (!room) return acknowledge({ error: 'That invite code is not valid' })
+        if (!normalizedCode)
+          return acknowledge({ error: 'Enter an invite code to join a game' })
+        if (normalizedCode.length !== VALID_INVITE_CODE_LENGTH)
+          return acknowledge({
+            error: `Invite code must be exactly ${VALID_INVITE_CODE_LENGTH} characters`,
+          })
+        const room = await loadRoomByInviteCode(normalizedCode)
+        if (!room)
+          return acknowledge({
+            error: "This room doesn't exist or is no longer available",
+          })
 
         const existingMark = getMark(room, user.id)
         if (existingMark) {
+          if (room.disconnectTimer) {
+            clearTimeout(room.disconnectTimer)
+            room.disconnectTimer = undefined
+          }
           room.connectedUserIds.add(user.id)
-          joinSocketRoom(socket, room.id)
+          await joinSocketRoom(socket, room.id)
+          await persistRoom(room)
           acknowledge({ game: snapshot(room, user.id) })
           sendState(io, room)
           return
         }
         if (room.game.status !== 'waiting' || room.playerIds.X)
-          return acknowledge({ error: 'This game is no longer available' })
+          return acknowledge({ error: 'This game is full' })
 
         room.playerIds.X = user.id
         room.playerNames.X = user.username
@@ -269,13 +414,14 @@ export function attachFriendGameSocket(io: Server): void {
           : { O: user.username, X: playerOName }
         room.game = createGameState(room.config, assignedOId, assignedXId)
         room.lastClockUpdateAt = Date.now()
-        joinSocketRoom(socket, room.id)
+        await joinSocketRoom(socket, room.id)
+        await persistRoom(room)
         acknowledge({ game: snapshot(room, user.id) })
         sendState(io, room)
       }
     )
 
-    socket.on('friend-game:move', (payload: unknown, acknowledge: Ack) => {
+    socket.on('friend-game:move', async (payload: unknown, acknowledge: Ack) => {
       if (!payload || typeof payload !== 'object') return acknowledge({ error: 'Invalid move' })
       const move = payload as Record<string, unknown>
       const gameId = assertGameId(move.gameId)
@@ -304,11 +450,12 @@ export function attachFriendGameSocket(io: Server): void {
       if (!nextGame) return acknowledge({ error: 'That move is not allowed' })
       room.game = nextGame
       room.lastClockUpdateAt = Date.now()
+      await persistRoom(room)
       sendState(io, room)
       acknowledge({})
     })
 
-    socket.on('friend-game:rematch', (rawGameId: unknown, acknowledge: Ack) => {
+    socket.on('friend-game:rematch', async (rawGameId: unknown, acknowledge: Ack) => {
       const gameId = assertGameId(rawGameId)
       const room = gameId ? roomsById.get(gameId) : undefined
       const mark = room ? getMark(room, user.id) : null
@@ -316,12 +463,17 @@ export function attachFriendGameSocket(io: Server): void {
         return acknowledge({ error: 'A rematch is not available' })
 
       room.rematchRequestedBy.add(mark)
-      if (room.rematchRequestedBy.size === 2) resetForRematch(room)
+      if (room.rematchRequestedBy.size === 2) {
+        resetForRematch(room)
+      } else if (room.connectedUserIds.size === 1 && room.game.status === 'finished') {
+        resetForWaiting(room, user)
+      }
+      await persistRoom(room)
       sendState(io, room)
       acknowledge({})
     })
 
-    socket.on('friend-game:draw', (rawGameId: unknown, acknowledge: Ack) => {
+    socket.on('friend-game:draw', async (rawGameId: unknown, acknowledge: Ack) => {
       const gameId = assertGameId(rawGameId)
       const room = gameId ? roomsById.get(gameId) : undefined
       const mark = room ? getMark(room, user.id) : null
@@ -333,6 +485,7 @@ export function attachFriendGameSocket(io: Server): void {
         room.game.winner = 'draw'
         room.game.status = 'finished'
       }
+      await persistRoom(room)
       sendState(io, room)
       acknowledge({})
     })
@@ -348,8 +501,29 @@ export function attachFriendGameSocket(io: Server): void {
           if (!stillConnected) {
             room.connectedUserIds.delete(user.id)
             if (room.connectedUserIds.size === 0) {
-              removeRoom(room)
+              if (room.disconnectTimer) clearTimeout(room.disconnectTimer)
+              room.disconnectTimer = setTimeout(() => {
+                room.disconnectTimer = undefined
+                if (room.connectedUserIds.size === 0) {
+                  removeRoom(room).catch(error => {
+                    console.error('Unable to remove expired friend game', error)
+                  })
+                }
+              }, FRIEND_GAME_DISCONNECT_GRACE_MS)
+              persistRoom(room).catch(error => {
+                console.error('Unable to persist disconnected friend game', error)
+              })
             } else {
+              if (room.disconnectTimer) clearTimeout(room.disconnectTimer)
+              room.disconnectTimer = setTimeout(() => {
+                room.disconnectTimer = undefined
+                finishAfterDisconnect(room, io).catch(error => {
+                  console.error('Unable to finish disconnected friend game', error)
+                })
+              }, FRIEND_GAME_DISCONNECT_GRACE_MS)
+              persistRoom(room).catch(error => {
+                console.error('Unable to persist disconnected friend game', error)
+              })
               sendState(io, room)
             }
           }
