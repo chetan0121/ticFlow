@@ -9,6 +9,8 @@ export {
   GAME_TIME_LIMIT_MINUTES_MAX,
   GAME_TIME_LIMIT_MINUTES_MIN,
   GAME_TIME_LIMIT_RANGE,
+  FRIEND_GAME_DISCONNECT_GRACE_MS,
+  VALID_INVITE_CODE_LENGTH,
   MINUTE_MS,
 } from './constants.js'
 export { cloneGameState, createDefaultGameState, createEmptyBoard } from './state.js'

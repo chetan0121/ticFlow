@@ -19,3 +19,6 @@ export const GAME_MOVE_LIMIT_RANGE = {
 } as const
 
 export const MINUTE_MS = 60_000
+
+export const VALID_INVITE_CODE_LENGTH = 6
+export const FRIEND_GAME_DISCONNECT_GRACE_MS = 30_000
