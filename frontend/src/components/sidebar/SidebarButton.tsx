@@ -1,9 +1,32 @@
 import { SidebarOpen } from "lucide-react";
+import { useState } from "react";
 import SidebarPanel from "./SidebarPanel";
 import { useOutsideClick } from "../../hooks/useOutsideClick";
+import NotificationBar, {
+  type NotificationType,
+} from "../NotificationBar";
 
 function SidebarButton() {
   const { ref, isOpen, open, close } = useOutsideClick();
+  const [notification, setNotification] = useState<{
+    type: NotificationType;
+    title: string;
+    message?: string;
+    eventKey: number;
+  } | null>(null);
+
+  function showNotification(
+    type: NotificationType,
+    title: string,
+    message?: string,
+  ) {
+    setNotification((current) => ({
+      type,
+      title,
+      eventKey: (current?.eventKey ?? 0) + 1,
+      ...(message ? { message } : {}),
+    }));
+  }
 
   return (
     <>
@@ -19,7 +42,18 @@ function SidebarButton() {
         />
       </button>
 
-      <SidebarPanel isOpen={isOpen} onClose={close} panelRef={ref} />
+      <SidebarPanel
+        isOpen={isOpen}
+        onClose={close}
+        onLogoutError={(message) =>
+          showNotification("error", "Logout failed", message)
+        }
+        onLogoutSuccess={() =>
+          showNotification("success", "Logged out successfully")
+        }
+        panelRef={ref}
+      />
+      {notification ? <NotificationBar {...notification} /> : null}
     </>
   );
 }

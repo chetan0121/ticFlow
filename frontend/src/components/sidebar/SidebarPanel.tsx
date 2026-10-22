@@ -1,21 +1,32 @@
 import type { RefObject } from "react";
+import { useState } from "react";
 import { Grid3X3, LogIn, LogOut, SidebarClose, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SidebarNavigation from "./SidebarNavigation";
 import AppRoutes from "../../router/AppRoutes";
 import { useAuth } from "../../features/auth/hooks/useAuth";
+import ConfirmationDialog from "../../features/game/components/ConfirmationDialog";
 
 interface SidebarPanelProps {
   panelRef: RefObject<HTMLDivElement | null>;
   isOpen: boolean;
   onClose: () => void;
+  onLogoutError: (message: string) => void;
+  onLogoutSuccess: () => void;
 }
 
 const BrandText = "TicFlow";
 
-function SidebarPanel({ panelRef, isOpen, onClose }: SidebarPanelProps) {
+function SidebarPanel({
+  panelRef,
+  isOpen,
+  onClose,
+  onLogoutError,
+  onLogoutSuccess,
+}: SidebarPanelProps) {
   const navigate = useNavigate();
   const { isLoading, logout, user } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const goHome = () => {
     void navigate(AppRoutes.home.path);
@@ -27,8 +38,16 @@ function SidebarPanel({ panelRef, isOpen, onClose }: SidebarPanelProps) {
     onClose();
   };
 
-  const logoutUser = () => {
-    void logout();
+  const logoutUser = async () => {
+    setShowLogoutConfirm(false);
+    try {
+      await logout();
+      onLogoutSuccess();
+    } catch (error) {
+      onLogoutError(
+        error instanceof Error ? error.message : "Please try again.",
+      );
+    }
     onClose();
   };
 
@@ -100,7 +119,7 @@ function SidebarPanel({ panelRef, isOpen, onClose }: SidebarPanelProps) {
               </span>
               <button
                 type="button"
-                onClick={logoutUser}
+                onClick={() => setShowLogoutConfirm(true)}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/4 text-white/58 transition-colors hover:bg-white/10 hover:text-white"
                 aria-label="Logout"
                 title="Logout"
@@ -121,6 +140,18 @@ function SidebarPanel({ panelRef, isOpen, onClose }: SidebarPanelProps) {
           )}
         </div>
       </div>
+      <ConfirmationDialog
+        cancelLabel="Stay logged in"
+        confirmIcon={<LogOut className="h-4 w-4" strokeWidth={2.35} />}
+        confirmLabel="Logout"
+        description="You will need to log in again to access your account."
+        id="logout-confirm-title"
+        kicker="Log out"
+        onCancel={() => setShowLogoutConfirm(false)}
+        onConfirm={() => void logoutUser()}
+        open={showLogoutConfirm}
+        title="Log out of TicFlow?"
+      />
     </>
   );
 }
