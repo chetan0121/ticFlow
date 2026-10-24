@@ -52,6 +52,36 @@ function cleanRepeated(values: string[]): string[] {
   return Array.from(new Set(values))
 }
 
+function normalizeFrontendOrigin(value: string, requireHttps: boolean): string {
+  let parsedOrigin: URL
+
+  try {
+    parsedOrigin = new URL(value)
+  } catch {
+    throw new Error(`FRONTEND_ORIGINS contains an invalid URL: ${value}`)
+  }
+
+  if (parsedOrigin.protocol !== 'http:' && parsedOrigin.protocol !== 'https:') {
+    throw new Error(`FRONTEND_ORIGINS must use HTTP or HTTPS: ${value}`)
+  }
+
+  if (requireHttps && parsedOrigin.protocol !== 'https:') {
+    throw new Error(`FRONTEND_ORIGINS must contain HTTPS URLs in production: ${value}`)
+  }
+
+  return parsedOrigin.origin
+}
+
+function readFrontendOrigins(): string[] {
+  const devMode = readBooleanEnv('DEV_MODE')
+
+  return cleanRepeated(
+    readListEnv('FRONTEND_ORIGINS').map(origin =>
+      normalizeFrontendOrigin(origin, !devMode)
+    )
+  )
+}
+
 function fetchMongoURI(): string {
   const uri = fetchEnv('MONGODB_URI')
   const dbName = fetchEnv('MONGODB_DB_NAME')
@@ -63,31 +93,14 @@ function fetchMongoURI(): string {
 const env = {
   devMode: readBooleanEnv('DEV_MODE'),
   port: readPort(),
-  frontendOrigins: cleanRepeated(readListEnv('FRONTEND_ORIGINS')),
+  frontendOrigins: readFrontendOrigins(),
   dnsServers: cleanRepeated(readListEnv('DNS_SERVERS')),
   mongoUri: fetchMongoURI(),
   jwtSecret: fetchEnv('JWT_SECRET'),
 }
 
-if (!env.devMode) {
-  if (env.frontendOrigins.length === 0) {
-    throw new Error('FRONTEND_ORIGINS must include an HTTPS origin when DEV_MODE=false')
-  }
-
-  for (const origin of env.frontendOrigins) {
-    let parsedOrigin: URL
-    try {
-      parsedOrigin = new URL(origin)
-    } catch {
-      throw new Error(`FRONTEND_ORIGINS contains an invalid origin: ${origin}`)
-    }
-
-    if (parsedOrigin.protocol !== 'https:' || parsedOrigin.origin !== origin) {
-      throw new Error(
-        `FRONTEND_ORIGINS must contain exact HTTPS origins in production: ${origin}`
-      )
-    }
-  }
+if (!env.devMode && env.frontendOrigins.length === 0) {
+  throw new Error('FRONTEND_ORIGINS must include an HTTPS origin when DEV_MODE=false')
 }
 
 export function isOriginAllowed(origin: string | undefined): boolean {
