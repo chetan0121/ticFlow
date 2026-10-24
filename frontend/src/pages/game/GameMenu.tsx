@@ -6,7 +6,10 @@ import NextButton from "../../components/buttons/NextButton";
 import NotificationBar from "../../components/NotificationBar";
 import MenuHeader from "../../features/menu/components/MenuHeader";
 import MenuSetupPanel from "../../features/menu/components/MenuSetup";
-import { apiBaseUrl } from "../../api/http";
+import {
+  apiBaseUrl,
+  BACKEND_UNAVAILABLE_MESSAGE,
+} from "../../api/http";
 import { useEnterKey } from "../../hooks/useEnterKey";
 import AppRoutes from "../../router/AppRoutes";
 import { useMenuContext } from "../../features/menu/hooks/useMenuContext";
@@ -108,7 +111,10 @@ function GameMenu() {
 
       setJoining(true);
 
-      const socket = io(apiBaseUrl, { withCredentials: true });
+      const socket = io(apiBaseUrl, {
+        withCredentials: true,
+        timeout: 10000,
+      });
       const finish = () => {
         socket.disconnect();
         setJoining(false);
@@ -134,9 +140,10 @@ function GameMenu() {
           );
         });
       });
-      socket.on("connect_error", () => {
+      socket.on("connect_error", (error) => {
         finish();
-        showJoinError("Unable to check the invite code. Please try again.");
+        console.error("[ONLINE_JOIN_BACKEND_UNAVAILABLE]", error);
+        showJoinError(BACKEND_UNAVAILABLE_MESSAGE);
       });
       return;
     }

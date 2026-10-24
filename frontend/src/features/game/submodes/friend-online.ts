@@ -5,7 +5,10 @@ import {
   type FriendGameSnapshot,
   type GameState,
 } from "@ticflow/shared";
-import { apiBaseUrl } from "../../../api/http";
+import {
+  apiBaseUrl,
+  BACKEND_UNAVAILABLE_MESSAGE,
+} from "../../../api/http";
 import type { BoardHookResult, GameConfig } from "../types";
 
 type CommandResponse = { error?: string };
@@ -50,7 +53,10 @@ export function useFriendOnlineBoard(
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const nextSocket = io(apiBaseUrl, { withCredentials: true });
+    const nextSocket = io(apiBaseUrl, {
+      withCredentials: true,
+      timeout: 10000,
+    });
     socketRef.current = nextSocket;
 
     const loadGame = async () => {
@@ -94,9 +100,10 @@ export function useFriendOnlineBoard(
 
     nextSocket.on("connect", () => void loadGame());
     nextSocket.on("friend-game:state", setSnapshot);
-    nextSocket.on("connect_error", () =>
-      showError("Please sign in to play online."),
-    );
+    nextSocket.on("connect_error", (error) => {
+      console.error("[ONLINE_GAME_BACKEND_UNAVAILABLE]", error);
+      showError(BACKEND_UNAVAILABLE_MESSAGE);
+    });
 
     return () => {
       nextSocket.disconnect();
