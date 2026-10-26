@@ -659,7 +659,10 @@ export function attachFriendGameSocket(io: Server): void {
 
     socket.on(
       'friend-game:rematch',
-      async (rawGameId: unknown, acknowledge: Ack<SocketCommandResult & { queued?: boolean }>) => {
+      async (
+        rawGameId: unknown,
+        acknowledge: Ack<SocketCommandResult & { queued?: boolean }>
+      ) => {
         const gameId = assertGameId(rawGameId)
         const room = gameId ? roomsById.get(gameId) : undefined
         const mark = room ? getMark(room, user.id) : null
@@ -701,7 +704,7 @@ export function attachFriendGameSocket(io: Server): void {
         await persistRoom(room)
         sendState(io, room)
         acknowledge({})
-      },
+      }
     )
 
     socket.on('friend-game:draw', async (rawGameId: unknown, acknowledge: Ack) => {
@@ -767,7 +770,10 @@ export function attachFriendGameSocket(io: Server): void {
                 const remainingUserId = Array.from(room.connectedUserIds)[0]!
                 let remainingSocket: Socket | undefined
                 for (const client of io.sockets.sockets.values()) {
-                  if (client.connected && usersBySocketId.get(client.id)?.id === remainingUserId) {
+                  if (
+                    client.connected &&
+                    usersBySocketId.get(client.id)?.id === remainingUserId
+                  ) {
                     remainingSocket = client
                     break
                   }
@@ -779,18 +785,26 @@ export function attachFriendGameSocket(io: Server): void {
                   console.error('Unable to remove expired matchmaking game', error)
                 })
                 removeFromMatchmakingQueue(remainingUserId)
-                const remainingUser = remainingSocket ? usersBySocketId.get(remainingSocket.id) : undefined
+                const remainingUser = remainingSocket
+                  ? usersBySocketId.get(remainingSocket.id)
+                  : undefined
                 if (remainingUser && remainingSocket) {
-                  matchmakingQueue.push({ socketId: remainingSocket.id, user: remainingUser, config: MATCHMAKING_FIXED_CONFIG })
+                  matchmakingQueue.push({
+                    socketId: remainingSocket.id,
+                    user: remainingUser,
+                    config: MATCHMAKING_FIXED_CONFIG,
+                  })
                   const first = matchmakingQueue.shift()
                   const second = matchmakingQueue.shift()
                   if (first && second) {
-                    void createMatchmakingRoom(io, first, second).then(unmatched => {
-                      matchmakingQueue.unshift(...unmatched)
-                    }).catch(error => {
-                      console.error('Unable to create matchmaking room', error)
-                      matchmakingQueue.unshift(first, second)
-                    })
+                    void createMatchmakingRoom(io, first, second)
+                      .then(unmatched => {
+                        matchmakingQueue.unshift(...unmatched)
+                      })
+                      .catch(error => {
+                        console.error('Unable to create matchmaking room', error)
+                        matchmakingQueue.unshift(first, second)
+                      })
                   } else if (first) {
                     matchmakingQueue.unshift(first)
                     remainingSocket.emit('matchmaking:queued', { queued: true })

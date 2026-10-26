@@ -443,16 +443,18 @@ function GameBoard() {
         {isWaitingForOpponent ? (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-[rgba(11,27,32,0.42)] p-3 backdrop-blur-[2px]">
             <div className="w-full max-w-sm rounded-xl border border-cyan-100/20 bg-[rgba(11,27,32,0.88)] px-5 py-4 text-center shadow-[0_18px_45px_rgba(0,0,0,0.4)]">
-        <p className="font-['Oswald'] text-2xl leading-none text-white">
-          {online?.queueing || (subMode === "matchmaking" && online?.waitingForOpponent)
-            ? "Finding an opponent"
-            : "Waiting for your friend"}
-        </p>
-        <p className="mt-2 text-sm text-white/65">
-          {online?.queueing || (subMode === "matchmaking" && online?.waitingForOpponent)
-            ? "You are in the matchmaking queue. Your game will start as soon as an opponent is found."
-            : "Share the invite code above to begin."}
-        </p>
+              <p className="font-['Oswald'] text-2xl leading-none text-white">
+                {online?.queueing ||
+                (subMode === "matchmaking" && online?.waitingForOpponent)
+                  ? "Finding an opponent"
+                  : "Waiting for your friend"}
+              </p>
+              <p className="mt-2 text-sm text-white/65">
+                {online?.queueing ||
+                (subMode === "matchmaking" && online?.waitingForOpponent)
+                  ? "You are in the matchmaking queue. Your game will start as soon as an opponent is found."
+                  : "Share the invite code above to begin."}
+              </p>
             </div>
           </div>
         ) : null}

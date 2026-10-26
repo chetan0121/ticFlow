@@ -12,7 +12,7 @@ interface BaseOptionProps {
 function BaseOption({ children, isActive = false, text }: BaseOptionProps) {
   return (
     <section
-      className={`relative max-w-100 flex h-full w-full flex-col rounded-2xl border p-4 transition-colors duration-300 ${
+      className={`relative flex h-full w-full max-w-100 flex-col rounded-2xl border p-4 transition-colors duration-300 ${
         isActive
           ? "z-30 border-amber-100/20 bg-black/30"
           : "border-white/10 bg-white/5.5"
