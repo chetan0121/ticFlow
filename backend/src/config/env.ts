@@ -72,13 +72,11 @@ function normalizeFrontendOrigin(value: string, requireHttps: boolean): string {
   return parsedOrigin.origin
 }
 
-function readFrontendOrigins(): string[] {
+function fetchFrontendOrigins(): string[] {
   const devMode = readBooleanEnv('DEV_MODE')
 
   return cleanRepeated(
-    readListEnv('FRONTEND_ORIGINS').map(origin =>
-      normalizeFrontendOrigin(origin, !devMode)
-    )
+    readListEnv('FRONTEND_ORIGINS').map(origin => normalizeFrontendOrigin(origin, !devMode))
   )
 }
 
@@ -93,7 +91,7 @@ function fetchMongoURI(): string {
 const env = {
   devMode: readBooleanEnv('DEV_MODE'),
   port: readPort(),
-  frontendOrigins: readFrontendOrigins(),
+  frontendOrigins: fetchFrontendOrigins(),
   dnsServers: cleanRepeated(readListEnv('DNS_SERVERS')),
   mongoUri: fetchMongoURI(),
   jwtSecret: fetchEnv('JWT_SECRET'),
