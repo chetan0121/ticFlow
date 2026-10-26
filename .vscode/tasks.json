@@ -133,6 +133,30 @@
         "showReuseMessage": false,
         "clear": true
       }
+    },
+    {
+      "label": "Re-install deps",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoExit",
+        "-NoProfile",
+        "-Command",
+        "$ErrorActionPreference = 'Stop'; $root = (Get-Location).Path; Write-Host 'Deleting all node_modules folders...'; $stack = [System.Collections.Generic.Stack[object]]::new(); $stack.Push([pscustomobject]@{Path=$root;Depth=0}); while ($stack.Count -gt 0) { $current = $stack.Pop(); foreach ($dir in [System.IO.Directory]::GetDirectories($current.Path)) { $depth = $current.Depth + 1; if ([System.IO.Path]::GetFileName($dir) -ieq 'node_modules') { Remove-Item -LiteralPath $dir -Recurse -Force; continue }; if ($depth -lt 3) { $stack.Push([pscustomobject]@{Path=$dir;Depth=$depth}) } } }; Write-Host 'All node_modules folders deleted.'; & bun install"
+      ],
+      "group": "build",
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      }
     }
   ]
 }
