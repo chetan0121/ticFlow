@@ -10,6 +10,8 @@ export type WinState = PlayerMark | 'draw' | null
 
 export type GameStatus = 'waiting' | 'playing' | 'paused' | 'finished'
 
+export type OnlineModeKind = 'friend' | 'matchmaking'
+
 export interface BaseGameState {
   board: BoardState
   currentTurn: PlayerMark
@@ -64,4 +66,19 @@ export interface CreateFriendGameResult extends SocketCommandResult {
 
 export interface JoinFriendGameResult extends SocketCommandResult {
   game?: FriendGameSnapshot
+}
+
+export interface MatchmakingSnapshot {
+  id: string
+  config: GameConfig
+  game: GameState
+  players: Partial<Record<PlayerMark, FriendGamePlayer>>
+  myMark: PlayerMark | null
+  drawRequestedBy: PlayerMark[]
+  rematchRequestedBy: PlayerMark[]
+}
+
+export interface QueueMatchmakingResult extends SocketCommandResult {
+  game?: MatchmakingSnapshot
+  queued?: boolean
 }
