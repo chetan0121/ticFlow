@@ -12,7 +12,7 @@ interface NotificationBarProps {
 }
 
 interface QueuedNotification extends NotificationBarProps {
-  id: string;
+  id: number;
 }
 
 const DISPLAY_TIME_MS = 4500;
@@ -39,15 +39,6 @@ const NOTIFICATION_STYLES = {
   },
 } as const;
 
-function getNotificationId({
-  type,
-  title,
-  message,
-  eventKey,
-}: NotificationBarProps): string {
-  return `${type}:${title}:${message ?? ""}:${eventKey ?? ""}`;
-}
-
 function NotificationBar({
   type,
   title,
@@ -55,68 +46,80 @@ function NotificationBar({
   onClose,
   eventKey,
 }: NotificationBarProps) {
-  const notification = { type, title, message, onClose, eventKey };
   const notificationSequence = useRef(0);
-  const [queue, setQueue] = useState<QueuedNotification[]>([
-    {
-      ...notification,
-      id: `${getNotificationId(notification)}:0`,
-    },
-  ]);
-  const [leaving, setLeaving] = useState(false);
-  const [overflowPending, setOverflowPending] = useState(false);
-  const pendingOverflow = useRef<QueuedNotification[]>([]);
-  const lastIncomingId = useRef(getNotificationId(notification));
+  const [queue, setQueue] = useState<QueuedNotification[]>([]);
+  const timeoutRef = useRef<number | null>(null);
+  const currentRef = useRef<QueuedNotification | undefined>(undefined);
+
   const current = queue[0];
-  const currentId = current?.id;
-
-  const dismissAll = useCallback(() => {
-    current?.onClose?.();
-    pendingOverflow.current = [];
-    setOverflowPending(false);
-    setLeaving(false);
-    setQueue([]);
-  }, [current, setLeaving, setOverflowPending, setQueue]);
 
   useEffect(() => {
-    const incomingId = getNotificationId({ type, title, message, eventKey });
-    if (incomingId === lastIncomingId.current) return;
+    currentRef.current = current;
+  }, [current]);
 
-    lastIncomingId.current = incomingId;
+  const dismissCurrent = useCallback(() => {
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
     setQueue((currentQueue) => {
-      const nextNotification = {
-        type,
-        title,
-        message,
-        onClose,
-        id: `${incomingId}:${++notificationSequence.current}`,
-      };
-
-      if (currentQueue.length >= MAX_NOTIFICATION_QUEUE_SIZE) {
-        pendingOverflow.current.push(nextNotification);
-        setOverflowPending(true);
-        return currentQueue;
+      const nextQueue = currentQueue.slice(1);
+      if (nextQueue.length === 0) {
+        currentRef.current?.onClose?.();
       }
-
-      return [...currentQueue, nextNotification];
+      return nextQueue;
     });
-  }, [eventKey, message, onClose, title, type]);
+  }, [setQueue]);
 
   useEffect(() => {
-    if (!currentId) return;
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+    }
 
-    const timeout = window.setTimeout(dismissAll, DISPLAY_TIME_MS);
+    if (!current) return;
 
-    return () => window.clearTimeout(timeout);
-  }, [currentId, dismissAll]);
+    timeoutRef.current = window.setTimeout(dismissCurrent, DISPLAY_TIME_MS);
+
+    return () => {
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [current, dismissCurrent]);
+
+  useEffect(() => {
+    if (!type || !title) return;
+
+    const nextNotification: QueuedNotification = {
+      type,
+      title,
+      message,
+      onClose,
+      id: ++notificationSequence.current,
+    };
+
+    setQueue((currentQueue) => {
+      const last = currentQueue[currentQueue.length - 1];
+      const isDuplicate =
+        last &&
+        last.type === nextNotification.type &&
+        last.title === nextNotification.title &&
+        last.message === nextNotification.message;
+      if (isDuplicate) return currentQueue;
+
+      return [...currentQueue, nextNotification].slice(
+        -MAX_NOTIFICATION_QUEUE_SIZE,
+      );
+    });
+  }, [type, title, message, onClose, eventKey]);
 
   function close() {
-    dismissAll();
+    dismissCurrent();
   }
 
   if (!current) return null;
-  const isLeaving = leaving || overflowPending;
-
   return (
     <div
       className="fixed top-4 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2"
@@ -136,11 +139,7 @@ function NotificationBar({
               key={item.id}
               className={`flex items-center gap-3 overflow-hidden rounded-xl border bg-black/35 px-4 py-3.5 backdrop-blur-md ${itemStyle.className} ${
                 isCurrent
-                  ? `relative z-10 shadow-[0_18px_45px_rgba(0,0,0,0.28)] ${
-                      isLeaving
-                        ? "animate-[notification-exit_280ms_ease-in_forwards]"
-                        : "animate-[notification-enter_420ms_cubic-bezier(0.22,1,0.36,1)]"
-                    }`
+                  ? "relative z-10 animate-[notification-enter_420ms_cubic-bezier(0.22,1,0.36,1)] shadow-[0_18px_45px_rgba(0,0,0,0.28)]"
                   : "pointer-events-none absolute inset-x-0 top-0 z-0 opacity-45 shadow-[0_10px_24px_rgba(0,0,0,0.2)]"
               }`}
               style={

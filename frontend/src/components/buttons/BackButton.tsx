@@ -30,6 +30,9 @@ function BackButton() {
     if (pathname === AppRoutes.gameBoard.path && coreMode !== "online") {
       clearLocalGameState(subMode);
     }
+    if (pathname === AppRoutes.gameBoard.path && coreMode === "online") {
+      window.dispatchEvent(new Event("ticflow:leave-online-game"));
+    }
 
     setShowLeaveConfirm(false);
     void navigate(targetPath);

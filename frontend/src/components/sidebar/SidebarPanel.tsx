@@ -141,13 +141,11 @@ function SidebarPanel({
         </div>
       </div>
       <ConfirmationDialog
-        cancelLabel="Stay logged in"
         confirmIcon={<LogOut className="h-4 w-4" strokeWidth={2.35} />}
         confirmLabel="Logout"
         description="You will need to log in again to access your account."
         id="logout-confirm-title"
         kicker="Log out"
-        onCancel={() => setShowLogoutConfirm(false)}
         onConfirm={() => void logoutUser()}
         open={showLogoutConfirm}
         title="Log out of TicFlow?"
