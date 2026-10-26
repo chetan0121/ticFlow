@@ -53,7 +53,11 @@ export function login(identifier: string, password: string) {
 }
 
 export function getMe() {
-  return requestAuth("/auth/me", undefined, "AUTH_SESSION_CHECK_BACKEND_UNAVAILABLE");
+  return requestAuth(
+    "/auth/me",
+    undefined,
+    "AUTH_SESSION_CHECK_BACKEND_UNAVAILABLE",
+  );
 }
 
 export async function logout() {

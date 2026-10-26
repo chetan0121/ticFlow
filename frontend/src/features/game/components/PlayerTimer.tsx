@@ -41,7 +41,13 @@ function PlayerTimer({
 
   return (
     <div
-      className={`relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-lg border px-3 py-2.5 transition-all duration-300 ${turnCue ? "animate-[your-turn-card_1.8s_ease-in-out_infinite]" : ""} ${stateClass}`}
+      className={`relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-lg border px-3 py-2.5 transition-all duration-300 ${
+        turnCue
+          ? mark === "O"
+            ? "animate-[your-turn-card_1.8s_ease-in-out_infinite]"
+            : "animate-[your-turn-card-red_1.8s_ease-in-out_infinite]"
+          : ""
+      } ${stateClass}`}
     >
       <span
         className={`absolute inset-y-2 left-0 w-1 rounded-r-full transition-opacity ${
@@ -63,11 +69,16 @@ function PlayerTimer({
         </span>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        {turnCue ? (
-          <span className="hidden animate-[your-turn-pop_1.8s_ease-out_infinite] rounded-full bg-current/15 px-1.5 py-1 font-['Montserrat'] text-[7px] font-black tracking-[0.12em] text-current uppercase min-[440px]:inline-flex">
-            Your turn
-          </span>
-        ) : null}
+        <span
+          aria-hidden={!turnCue}
+          className={`hidden rounded-full bg-current/15 px-1.5 py-1 font-['Montserrat'] text-[7px] font-black tracking-[0.12em] text-current uppercase min-[440px]:inline-flex ${
+            turnCue
+              ? "animate-[your-turn-pop_1.8s_ease-out_infinite]"
+              : "opacity-0"
+          }`}
+        >
+          Your turn
+        </span>
         <span className="font-['Montserrat'] text-sm leading-none font-bold tabular-nums min-[360px]:text-base sm:text-lg">
           {formatTime(remainingTime)}
         </span>

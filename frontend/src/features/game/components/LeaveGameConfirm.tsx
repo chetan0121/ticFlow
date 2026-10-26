@@ -14,7 +14,6 @@ function LeaveGameConfirm({
 }: LeaveGameConfirmProps) {
   return (
     <ConfirmationDialog
-      cancelLabel="Stay"
       confirmIcon={<ArrowLeft className="h-4 w-4" strokeWidth={2.35} />}
       confirmLabel="Leave"
       description="Current moves and timers will be lost."

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   cloneGameState,
   createDefaultGameState,
@@ -74,8 +74,14 @@ export function useLocalBoard(
   );
   const [game, setGame] = useState(() => loadGame(config, createGame));
 
+  const lastSaveRef = useRef(0);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    const now = Date.now();
+    if (now - lastSaveRef.current < 500) return;
+    lastSaveRef.current = now;
 
     const stored: StoredLocalGame = {
       config: {

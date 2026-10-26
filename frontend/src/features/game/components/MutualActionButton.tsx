@@ -6,6 +6,7 @@ interface MutualActionButtonProps {
   disabled: boolean;
   pending: boolean;
   opponentRequested: boolean;
+  attentionAnimation?: string;
   onClick: () => void;
 }
 
@@ -16,12 +17,13 @@ function MutualActionButton({
   disabled,
   pending,
   opponentRequested,
+  attentionAnimation = "animate-[agreement-glow_1.65s_ease-in-out_infinite]",
   onClick,
 }: MutualActionButtonProps) {
   const stateClass = disabled
     ? "cursor-not-allowed border-white/8 bg-black/10 text-white/28 shadow-none"
     : opponentRequested
-      ? "animate-[agreement-glow_1.65s_ease-in-out_infinite] border-sky-200/60 bg-sky-300/18 text-sky-50"
+      ? `${attentionAnimation} border-sky-200/60 bg-sky-300/18 text-sky-50`
       : pending
         ? "cursor-wait border-white/14 bg-white/8 text-white/55"
         : "border-white/14 bg-black/20 text-white/70 hover:border-white/30 hover:bg-white/10 hover:text-white";

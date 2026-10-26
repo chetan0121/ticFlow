@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import * as authApi from "../api";
 import type { AuthUser } from "../types";
 import { AuthContext } from "./AuthContext";
-
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -21,7 +20,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (isMounted) setUser(response.user);
       })
       .catch(() => {
-        if (isMounted) setUser(null);
+        if (isMounted) {
+          setUser(null);
+          document.cookie =
+            "ticflow_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
       })
       .finally(() => {
         if (isMounted) setIsLoading(false);

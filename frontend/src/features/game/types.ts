@@ -52,11 +52,19 @@ export interface BoardHookResult {
     myName: string | null;
     opponentName: string | null;
     opponentConnected: boolean | null;
+    connectionNotice: {
+      type: "info";
+      title: string;
+      message: string;
+      id: number;
+    } | null;
+    dismissConnectionNotice: () => void;
     waitingForOpponent: boolean;
     drawRequested: boolean;
     opponentDrawRequested: boolean;
     restartRequested: boolean;
     opponentRestartRequested: boolean;
+    leave: () => void;
     requestDraw: () => void;
     dismissError: () => void;
   };

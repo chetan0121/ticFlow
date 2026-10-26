@@ -12,6 +12,7 @@ interface GameResultPopupProps {
   open: boolean;
   winner: WinState;
   winnerName?: string | undefined;
+  resultFor?: "winner" | "loser" | undefined;
   matchup?: string | undefined;
   backLabel?: string;
   replayLabel?: string;
@@ -19,13 +20,35 @@ interface GameResultPopupProps {
   replayAttention?: boolean;
 }
 
-function getResultContent(winner: WinState, winnerName?: string) {
+function getResultContent(
+  winner: WinState,
+  winnerName?: string,
+  resultFor?: "winner" | "loser",
+) {
   if (winner === "draw") {
     return {
       Icon: Handshake,
-      title: "Draw Game",
-      label: "No winner",
+      title: "DRAW",
+      label: "Draw",
       tone: "border-amber-200/45 bg-amber-300/10 text-amber-100",
+    };
+  }
+
+  if (resultFor === "loser") {
+    return {
+      Icon: Trophy,
+      title: "DEFEAT",
+      label: "Defeat",
+      tone: "border-rose-300/45 bg-rose-400/10 text-rose-100",
+    };
+  }
+
+  if (resultFor === "winner") {
+    return {
+      Icon: Trophy,
+      title: "VICTORY",
+      label: "Victory",
+      tone: "border-cyan-300/45 bg-cyan-400/10 text-cyan-100",
     };
   }
 
@@ -45,6 +68,7 @@ function GameResultPopup({
   open,
   winner,
   winnerName,
+  resultFor,
   matchup,
   backLabel = "Back",
   replayLabel = "Replay",
@@ -53,7 +77,11 @@ function GameResultPopup({
 }: GameResultPopupProps) {
   if (!open || winner === null) return null;
 
-  const { Icon, title, label, tone } = getResultContent(winner, winnerName);
+  const { Icon, title, tone } = getResultContent(
+    winner,
+    winnerName,
+    resultFor,
+  );
 
   return (
     <div
@@ -80,9 +108,6 @@ function GameResultPopup({
           </div>
 
           <div className="text-center">
-            <p className="font-['Montserrat'] text-xs font-semibold tracking-[0.18em] uppercase">
-              {label}
-            </p>
             <h2
               id="game-result-title"
               className="mt-1 font-['Oswald'] text-4xl leading-none font-semibold text-white"
@@ -90,7 +115,7 @@ function GameResultPopup({
               {title}
             </h2>
             {matchup ? (
-              <p className="mt-3 font-['Montserrat'] text-[10px] font-bold tracking-[0.2em] text-white/65 uppercase">
+              <p className="mt-3 font-['Montserrat'] text-[10px] font-bold tracking-[0.2em] text-white/65">
                 {matchup}
               </p>
             ) : null}
@@ -118,7 +143,7 @@ function GameResultPopup({
               }`}
             >
               <RotateCcw className="h-4 w-4" strokeWidth={2.35} />
-              <span>{replayPending ? "Restart requested" : replayLabel}</span>
+              <span>{replayPending ? "Play again requested" : replayLabel}</span>
             </button>
           </div>
         </div>
