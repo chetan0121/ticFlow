@@ -17,13 +17,16 @@ import type {
   GameConfig,
   GameState,
   JoinFriendGameResult,
+  MatchmakingSnapshot,
+  OnlineModeKind,
   PlayerMark,
+  QueueMatchmakingResult,
   SocketCommandResult,
 } from '@ticflow/shared'
 import type { Server, Socket } from 'socket.io'
 
 import { AUTH_COOKIE_NAME } from '../../config/constants.js'
-import FriendGame from '../../db/models/friend-game.js'
+import OnlineMode from '../../db/models/online-mode.js'
 import { getSession } from '../auth/services.js'
 
 const ROOM_PREFIX = 'friend-game:'
@@ -33,8 +36,9 @@ interface ConnectedUser {
   username: string
 }
 
-interface FriendGameRoom {
+interface OnlineModeRoom {
   id: string
+  kind: OnlineModeKind
   inviteCode: string
   config: GameConfig
   game: GameState
@@ -48,11 +52,23 @@ interface FriendGameRoom {
   disconnectTimer?: ReturnType<typeof setTimeout> | undefined
 }
 
+interface QueuedPlayer {
+  socketId: string
+  user: ConnectedUser
+  config: GameConfig
+}
+
 type Ack<T extends SocketCommandResult = SocketCommandResult> = (result: T) => void
 
-const roomsById = new Map<string, FriendGameRoom>()
+const roomsById = new Map<string, OnlineModeRoom>()
 const roomIdByInviteCode = new Map<string, string>()
 const usersBySocketId = new Map<string, ConnectedUser>()
+const matchmakingQueue: QueuedPlayer[] = []
+
+const MATCHMAKING_FIXED_CONFIG: GameConfig = {
+  timeLimit: 2,
+  moveLimit: 50,
+}
 
 function roomName(gameId: string): string {
   return `${ROOM_PREFIX}${gameId}`
@@ -105,13 +121,13 @@ function makeInviteCode(): string {
   return code
 }
 
-function getMark(room: FriendGameRoom, userId: string): PlayerMark | null {
+function getMark(room: OnlineModeRoom, userId: string): PlayerMark | null {
   if (room.playerIds.O === userId) return 'O'
   if (room.playerIds.X === userId) return 'X'
   return null
 }
 
-function snapshot(room: FriendGameRoom, userId: string): FriendGameSnapshot {
+function snapshot(room: OnlineModeRoom, userId: string): FriendGameSnapshot {
   const players: FriendGameSnapshot['players'] = {}
 
   for (const mark of ['O', 'X'] as const) {
@@ -134,39 +150,51 @@ function snapshot(room: FriendGameRoom, userId: string): FriendGameSnapshot {
   }
 }
 
-function sendState(io: Server, room: FriendGameRoom): void {
+function matchmakingSnapshot(room: OnlineModeRoom, userId: string): MatchmakingSnapshot {
+  const { ...game } = snapshot(room, userId)
+  return game
+}
+
+function sendState(io: Server, room: OnlineModeRoom): void {
   for (const socket of io.sockets.adapter.rooms.get(roomName(room.id)) ?? []) {
     const client = io.sockets.sockets.get(socket)
     const user = client ? usersBySocketId.get(client.id) : undefined
-    if (client && user) client.emit('friend-game:state', snapshot(room, user.id))
+    if (client && user)
+      client.emit(
+        room.kind === 'matchmaking' ? 'matchmaking:state' : 'friend-game:state',
+        room.kind === 'matchmaking'
+          ? matchmakingSnapshot(room, user.id)
+          : snapshot(room, user.id)
+      )
   }
 }
 
-function clearDrawRequestTimer(room: FriendGameRoom, mark: PlayerMark): void {
+function clearDrawRequestTimer(room: OnlineModeRoom, mark: PlayerMark): void {
   const timer = room.drawRequestTimers.get(mark)
   if (timer) clearTimeout(timer)
   room.drawRequestTimers.delete(mark)
 }
 
-function clearDrawRequestTimers(room: FriendGameRoom): void {
+function clearDrawRequestTimers(room: OnlineModeRoom): void {
   for (const mark of room.drawRequestTimers.keys()) {
     clearDrawRequestTimer(room, mark)
   }
 }
 
-async function removeRoom(room: FriendGameRoom): Promise<void> {
+async function removeRoom(room: OnlineModeRoom): Promise<void> {
   if (room.disconnectTimer) clearTimeout(room.disconnectTimer)
   clearDrawRequestTimers(room)
   roomsById.delete(room.id)
   roomIdByInviteCode.delete(room.inviteCode)
-  await FriendGame.deleteOne({ gameId: room.id })
+  await OnlineMode.deleteOne({ gameId: room.id })
 }
 
-async function persistRoom(room: FriendGameRoom): Promise<void> {
-  await FriendGame.findOneAndUpdate(
+async function persistRoom(room: OnlineModeRoom): Promise<void> {
+  await OnlineMode.findOneAndUpdate(
     { gameId: room.id },
     {
       gameId: room.id,
+      kind: room.kind,
       inviteCode: room.inviteCode,
       config: room.config,
       game: room.game,
@@ -182,6 +210,7 @@ async function persistRoom(room: FriendGameRoom): Promise<void> {
 
 function roomFromDocument(document: {
   gameId: string
+  kind?: OnlineModeKind
   inviteCode: string
   config: GameConfig
   game: GameState
@@ -190,9 +219,10 @@ function roomFromDocument(document: {
   drawRequestedBy: PlayerMark[]
   rematchRequestedBy: PlayerMark[]
   lastClockUpdateAt: number
-}): FriendGameRoom {
+}): OnlineModeRoom {
   return {
     id: document.gameId,
+    kind: document.kind ?? 'friend',
     inviteCode: document.inviteCode,
     config: document.config,
     game: document.game,
@@ -206,11 +236,77 @@ function roomFromDocument(document: {
   }
 }
 
-async function loadRoomById(gameId: string): Promise<FriendGameRoom | undefined> {
+function removeFromMatchmakingQueue(socketId: string): void {
+  const index = matchmakingQueue.findIndex(entry => entry.socketId === socketId)
+  if (index !== -1) matchmakingQueue.splice(index, 1)
+}
+
+function removeUserFromMatchmakingQueue(userId: string): void {
+  for (let index = matchmakingQueue.length - 1; index >= 0; index -= 1) {
+    if (matchmakingQueue[index]?.user.id === userId) matchmakingQueue.splice(index, 1)
+  }
+}
+
+async function createMatchmakingRoom(
+  io: Server,
+  first: QueuedPlayer,
+  second: QueuedPlayer
+): Promise<QueuedPlayer[]> {
+  const firstSocket = io.sockets.sockets.get(first.socketId)
+  const secondSocket = io.sockets.sockets.get(second.socketId)
+  if (!firstSocket || !secondSocket || !firstSocket.connected || !secondSocket.connected)
+    return [first, second].filter(entry => io.sockets.sockets.get(entry.socketId)?.connected)
+
+  const firstGetsO = (randomBytes(1)[0] ?? 0) % 2 === 0
+  const playerO = firstGetsO ? first.user : second.user
+  const playerX = firstGetsO ? second.user : first.user
+  const room: OnlineModeRoom = {
+    id: randomUUID(),
+    kind: 'matchmaking',
+    // Kept internally because the existing persistence model has an indexed code.
+    // It is never returned or accepted by matchmaking clients.
+    inviteCode: makeInviteCode(),
+    config: MATCHMAKING_FIXED_CONFIG,
+    game: createGameState(MATCHMAKING_FIXED_CONFIG, playerO.id, playerX.id),
+    playerIds: { O: playerO.id, X: playerX.id },
+    playerNames: { O: playerO.username, X: playerX.username },
+    connectedUserIds: new Set([first.user.id, second.user.id]),
+    drawRequestedBy: new Set(),
+    drawRequestTimers: new Map(),
+    rematchRequestedBy: new Set(),
+    lastClockUpdateAt: Date.now(),
+  }
+  roomsById.set(room.id, room)
+  roomIdByInviteCode.set(room.inviteCode, room.id)
+
+  try {
+    await Promise.all([
+      joinSocketRoom(firstSocket, room.id),
+      joinSocketRoom(secondSocket, room.id),
+    ])
+    await persistRoom(room)
+    firstSocket.emit('matchmaking:matched', matchmakingSnapshot(room, first.user.id))
+    secondSocket.emit('matchmaking:matched', matchmakingSnapshot(room, second.user.id))
+    return []
+  } catch (error) {
+    console.error('Unable to create matchmaking game', error)
+    roomsById.delete(room.id)
+    roomIdByInviteCode.delete(room.inviteCode)
+    firstSocket.emit('matchmaking:error', {
+      error: 'Unable to start a match. Please try again.',
+    })
+    secondSocket.emit('matchmaking:error', {
+      error: 'Unable to start a match. Please try again.',
+    })
+    return [first, second]
+  }
+}
+
+async function loadRoomById(gameId: string): Promise<OnlineModeRoom | undefined> {
   const inMemory = roomsById.get(gameId)
   if (inMemory) return inMemory
 
-  const document = await FriendGame.findOne({ gameId }).lean()
+  const document = await OnlineMode.findOne({ gameId }).lean()
   if (!document) return undefined
 
   const room = roomFromDocument({
@@ -223,11 +319,11 @@ async function loadRoomById(gameId: string): Promise<FriendGameRoom | undefined>
   return room
 }
 
-async function loadRoomByInviteCode(inviteCode: string): Promise<FriendGameRoom | undefined> {
+async function loadRoomByInviteCode(inviteCode: string): Promise<OnlineModeRoom | undefined> {
   const mappedId = roomIdByInviteCode.get(inviteCode)
   if (mappedId) return loadRoomById(mappedId)
 
-  const document = await FriendGame.findOne({ inviteCode }).lean()
+  const document = await OnlineMode.findOne({ inviteCode }).lean()
   if (!document) return undefined
 
   const room = roomFromDocument({
@@ -240,7 +336,7 @@ async function loadRoomByInviteCode(inviteCode: string): Promise<FriendGameRoom 
   return room
 }
 
-function updateClock(room: FriendGameRoom): boolean {
+function updateClock(room: OnlineModeRoom): boolean {
   if (room.game.status !== 'playing' || room.config.timeLimit === null) return false
 
   const now = Date.now()
@@ -273,7 +369,7 @@ async function joinSocketRoom(socket: Socket, gameId: string): Promise<void> {
   await socket.join(roomName(gameId))
 }
 
-function resetForRematch(room: FriendGameRoom): void {
+function resetForRematch(room: OnlineModeRoom): void {
   const playerOId = room.playerIds.O
   const playerXId = room.playerIds.X
   const playerOName = room.playerNames.O
@@ -295,7 +391,7 @@ function resetForRematch(room: FriendGameRoom): void {
   room.lastClockUpdateAt = Date.now()
 }
 
-function resetForWaiting(room: FriendGameRoom, remainingUser: ConnectedUser): void {
+function resetForWaiting(room: OnlineModeRoom, remainingUser: ConnectedUser): void {
   room.playerIds = { O: remainingUser.id }
   room.playerNames = { O: remainingUser.username }
   room.game = createGameState(room.config, remainingUser.id)
@@ -305,7 +401,7 @@ function resetForWaiting(room: FriendGameRoom, remainingUser: ConnectedUser): vo
   room.lastClockUpdateAt = Date.now()
 }
 
-async function finishAfterDisconnect(room: FriendGameRoom, io: Server): Promise<void> {
+async function finishAfterDisconnect(room: OnlineModeRoom, io: Server): Promise<void> {
   if (room.connectedUserIds.size !== 1 || room.game.status !== 'playing') return
 
   const remainingUserId = Array.from(room.connectedUserIds)[0]
@@ -344,8 +440,9 @@ export function attachFriendGameSocket(io: Server): void {
         if (!isGameConfig(config)) return acknowledge({ error: 'Invalid game settings' })
 
         const id = randomUUID()
-        const room: FriendGameRoom = {
+        const room: OnlineModeRoom = {
           id,
+          kind: 'friend',
           inviteCode: makeInviteCode(),
           config,
           game: createGameState(config, user.id),
@@ -373,11 +470,63 @@ export function attachFriendGameSocket(io: Server): void {
     )
 
     socket.on(
+      'matchmaking:queue',
+      async (configOrAck: unknown, maybeAck?: Ack<QueueMatchmakingResult>) => {
+        const acknowledge =
+          typeof configOrAck === 'function'
+            ? (configOrAck as Ack<QueueMatchmakingResult>)
+            : maybeAck
+        if (!acknowledge) return
+
+        removeUserFromMatchmakingQueue(user.id)
+        matchmakingQueue.push({ socketId: socket.id, user, config: MATCHMAKING_FIXED_CONFIG })
+        const first = matchmakingQueue.shift()
+        const second = matchmakingQueue.shift()
+
+        if (!first || !second) {
+          if (first) matchmakingQueue.unshift(first)
+          acknowledge({ queued: true })
+          return
+        }
+
+        const unmatched = await createMatchmakingRoom(io, first, second)
+        matchmakingQueue.unshift(...unmatched)
+        acknowledge({ queued: true })
+      }
+    )
+
+    socket.on('matchmaking:cancel', (acknowledge: Ack) => {
+      removeFromMatchmakingQueue(socket.id)
+      acknowledge({})
+    })
+
+    socket.on(
+      'matchmaking:resume',
+      async (gameId: unknown, acknowledge: Ack<QueueMatchmakingResult>) => {
+        const room = typeof gameId === 'string' ? await loadRoomById(gameId) : undefined
+        const mark = room ? getMark(room, user.id) : null
+        if (!room || room.kind !== 'matchmaking' || !mark)
+          return acknowledge({ error: 'This match is no longer available' })
+
+        if (room.disconnectTimer) {
+          clearTimeout(room.disconnectTimer)
+          room.disconnectTimer = undefined
+        }
+        room.connectedUserIds.add(user.id)
+        await joinSocketRoom(socket, room.id)
+        await persistRoom(room)
+        acknowledge({ game: matchmakingSnapshot(room, user.id) })
+        sendState(io, room)
+      }
+    )
+
+    socket.on(
       'friend-game:resume',
       async (gameId: unknown, acknowledge: Ack<JoinFriendGameResult>) => {
         const room = typeof gameId === 'string' ? await loadRoomById(gameId) : undefined
         const mark = room ? getMark(room, user.id) : null
-        if (!room || !mark) return acknowledge({ error: 'This game is no longer available' })
+        if (!room || room.kind !== 'friend' || !mark)
+          return acknowledge({ error: 'This game is no longer available' })
 
         if (room.disconnectTimer) {
           clearTimeout(room.disconnectTimer)
@@ -452,11 +601,11 @@ export function attachFriendGameSocket(io: Server): void {
       }
     )
 
-    socket.on('friend-game:leave', async (rawGameId: unknown, acknowledge: Ack) => {
+    socket.on('friend-game:leave', async (rawGameId: unknown, acknowledge?: Ack) => {
       const gameId = assertGameId(rawGameId)
       const room = gameId ? roomsById.get(gameId) : undefined
       const mark = room ? getMark(room, user.id) : null
-      if (!room || !mark) return acknowledge({ error: 'Game is no longer available' })
+      if (!room || !mark) return acknowledge?.({ error: 'Game is no longer available' })
 
       room.connectedUserIds.delete(user.id)
       await socket.leave(roomName(room.id))
@@ -471,7 +620,7 @@ export function attachFriendGameSocket(io: Server): void {
           })
         }, FRIEND_GAME_DISCONNECT_GRACE_MS)
       }
-      acknowledge({})
+      acknowledge?.({})
     })
 
     socket.on('friend-game:move', async (payload: unknown, acknowledge: Ack) => {
@@ -508,23 +657,52 @@ export function attachFriendGameSocket(io: Server): void {
       acknowledge({})
     })
 
-    socket.on('friend-game:rematch', async (rawGameId: unknown, acknowledge: Ack) => {
-      const gameId = assertGameId(rawGameId)
-      const room = gameId ? roomsById.get(gameId) : undefined
-      const mark = room ? getMark(room, user.id) : null
-      if (!room || !mark || room.game.status !== 'finished')
-        return acknowledge({ error: 'A rematch is not available' })
+    socket.on(
+      'friend-game:rematch',
+      async (rawGameId: unknown, acknowledge: Ack<SocketCommandResult & { queued?: boolean }>) => {
+        const gameId = assertGameId(rawGameId)
+        const room = gameId ? roomsById.get(gameId) : undefined
+        const mark = room ? getMark(room, user.id) : null
+        if (!room || !mark || room.game.status !== 'finished')
+          return acknowledge({ error: 'A rematch is not available' })
 
-      room.rematchRequestedBy.add(mark)
-      if (room.rematchRequestedBy.size === 2) {
-        resetForRematch(room)
-      } else if (room.connectedUserIds.size === 1 && room.game.status === 'finished') {
-        resetForWaiting(room, user)
-      }
-      await persistRoom(room)
-      sendState(io, room)
-      acknowledge({})
-    })
+        room.rematchRequestedBy.add(mark)
+        if (room.rematchRequestedBy.size === 2) {
+          resetForRematch(room)
+          await persistRoom(room)
+          sendState(io, room)
+          acknowledge({})
+          return
+        }
+
+        if (room.kind === 'matchmaking' && room.connectedUserIds.size === 1) {
+          // Opponent left the finished matchmaking game: re-queue the remaining
+          // player instead of leaving them in a one-player "waiting" room.
+          await socket.leave(roomName(room.id))
+          await removeRoom(room)
+          removeFromMatchmakingQueue(user.id)
+          matchmakingQueue.push({ socketId: socket.id, user, config: MATCHMAKING_FIXED_CONFIG })
+          const first = matchmakingQueue.shift()
+          const second = matchmakingQueue.shift()
+          if (first && second) {
+            const unmatched = await createMatchmakingRoom(io, first, second)
+            matchmakingQueue.unshift(...unmatched)
+          } else if (first) {
+            matchmakingQueue.unshift(first)
+          }
+          acknowledge({ queued: true })
+          return
+        }
+
+        if (room.connectedUserIds.size === 1 && room.game.status === 'finished') {
+          resetForWaiting(room, user)
+        }
+
+        await persistRoom(room)
+        sendState(io, room)
+        acknowledge({})
+      },
+    )
 
     socket.on('friend-game:draw', async (rawGameId: unknown, acknowledge: Ack) => {
       const gameId = assertGameId(rawGameId)
@@ -558,6 +736,7 @@ export function attachFriendGameSocket(io: Server): void {
 
     socket.on('disconnect', () => {
       usersBySocketId.delete(socket.id)
+      removeFromMatchmakingQueue(socket.id)
       for (const room of roomsById.values()) {
         if (getMark(room, user.id)) {
           const stillConnected = Array.from(io.sockets.sockets.values()).some(client => {
@@ -580,6 +759,45 @@ export function attachFriendGameSocket(io: Server): void {
                 console.error('Unable to persist disconnected friend game', error)
               })
             } else {
+              if (room.kind === 'matchmaking' && room.game.status === 'finished') {
+                // Opponent left a finished matchmaking game: re-queue the remaining
+                // player immediately instead of waiting the disconnect grace period.
+                if (room.disconnectTimer) clearTimeout(room.disconnectTimer)
+                room.disconnectTimer = undefined
+                const remainingUserId = Array.from(room.connectedUserIds)[0]!
+                let remainingSocket: Socket | undefined
+                for (const client of io.sockets.sockets.values()) {
+                  if (client.connected && usersBySocketId.get(client.id)?.id === remainingUserId) {
+                    remainingSocket = client
+                    break
+                  }
+                }
+                if (remainingSocket) {
+                  void remainingSocket.leave(roomName(room.id))
+                }
+                removeRoom(room).catch(error => {
+                  console.error('Unable to remove expired matchmaking game', error)
+                })
+                removeFromMatchmakingQueue(remainingUserId)
+                const remainingUser = remainingSocket ? usersBySocketId.get(remainingSocket.id) : undefined
+                if (remainingUser && remainingSocket) {
+                  matchmakingQueue.push({ socketId: remainingSocket.id, user: remainingUser, config: MATCHMAKING_FIXED_CONFIG })
+                  const first = matchmakingQueue.shift()
+                  const second = matchmakingQueue.shift()
+                  if (first && second) {
+                    void createMatchmakingRoom(io, first, second).then(unmatched => {
+                      matchmakingQueue.unshift(...unmatched)
+                    }).catch(error => {
+                      console.error('Unable to create matchmaking room', error)
+                      matchmakingQueue.unshift(first, second)
+                    })
+                  } else if (first) {
+                    matchmakingQueue.unshift(first)
+                    remainingSocket.emit('matchmaking:queued', { queued: true })
+                  }
+                }
+                return
+              }
               if (room.disconnectTimer) clearTimeout(room.disconnectTimer)
               room.disconnectTimer = setTimeout(() => {
                 room.disconnectTimer = undefined

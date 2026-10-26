@@ -5,9 +5,9 @@ import { Server } from 'socket.io'
 import { getNewApp } from './app.js'
 import env from './config/env.js'
 import { closeMongo, connectMongo } from './db/mongo.js'
-import { ensureIndexes } from './db/models/index.js'
+import { ensureIndexes } from './db/db-indexing.js'
 import { isOriginAllowed } from './config/env.js'
-import { attachFriendGameSocket } from './modules/friend-game/socket.js'
+import { attachFriendGameSocket } from './modules/online-mode/socket.js'
 
 if (env.dnsServers.length > 0) {
   setServers(env.dnsServers)

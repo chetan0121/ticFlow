@@ -1,9 +1,10 @@
 import mongoose from 'mongoose'
-import { FRIEND_GAME_TTL_SECONDS } from '../../config/constants.js'
+import { ONLINE_MODE_TTL_SECONDS } from '../../config/constants.js'
 
-const friendGameSchema = new mongoose.Schema(
+const onlineModeSchema = new mongoose.Schema(
   {
     gameId: { type: String, required: true, unique: true, index: true },
+    kind: { type: String, enum: ['friend', 'matchmaking'], default: 'friend', required: true },
     inviteCode: { type: String, required: true, unique: true, index: true },
     config: { type: mongoose.Schema.Types.Mixed, required: true },
     game: { type: mongoose.Schema.Types.Mixed, required: true },
@@ -16,7 +17,8 @@ const friendGameSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
-friendGameSchema.index({ updatedAt: 1 }, { expireAfterSeconds: FRIEND_GAME_TTL_SECONDS })
+onlineModeSchema.index({ updatedAt: 1 }, { expireAfterSeconds: ONLINE_MODE_TTL_SECONDS })
 
-export const FriendGame = mongoose.model('FriendGame', friendGameSchema)
-export default FriendGame
+// Retain the established collection while changing the application model name.
+export const OnlineMode = mongoose.model('OnlineMode', onlineModeSchema, 'friendgames')
+export default OnlineMode

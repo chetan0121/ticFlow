@@ -9,8 +9,8 @@ export const SESSION_TTL_MS = 7 * DAY_MS
 // Sessions are rejected once they pass 90 days, regardless of activity
 export const SESSION_HARD_TTL_MS = 90 * DAY_MS
 
-// Friend games expire one day after their last persisted update
-export const FRIEND_GAME_TTL_SECONDS = DAY_MS / 1000
+// Online modes expire one day after their last persisted update.
+export const ONLINE_MODE_TTL_SECONDS = DAY_MS / 1000
 
 // Regex patterns for validating usernames and emails
 export const USERNAME_PATTERN = /^[a-z0-9_]+$/
