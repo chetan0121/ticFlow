@@ -26,6 +26,29 @@ export function useGameSetupOptions(): GameSetupOptions[] {
     setSubMode(nextSubMode);
   };
 
+  if (subMode === "matchmaking") {
+    return [
+      {
+        key: "mode",
+        text: modeText,
+        selection: {
+          options: codeModes,
+          currentOption: coreMode,
+          selectOption: selectCoreMode,
+        },
+      },
+      {
+        key: "subMode",
+        text: subModeText,
+        selection: {
+          options: subModes,
+          currentOption: subMode,
+          selectOption: setSubMode as (value: string) => void,
+        },
+      },
+    ];
+  }
+
   return [
     {
       key: "mode",

@@ -60,6 +60,7 @@ export interface BoardHookResult {
     } | null;
     dismissConnectionNotice: () => void;
     waitingForOpponent: boolean;
+    queueing: boolean;
     drawRequested: boolean;
     opponentDrawRequested: boolean;
     restartRequested: boolean;

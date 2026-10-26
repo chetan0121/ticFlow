@@ -119,8 +119,9 @@ function GameBoard() {
   } = useMenuContext();
 
   const coreModeLabel =
-    GAME_MODES().modes.find((mode) => mode.value === coreMode)?.label
-      ?.toUpperCase() ?? coreMode;
+    GAME_MODES()
+      .modes.find((mode) => mode.value === coreMode)
+      ?.label?.toUpperCase() ?? coreMode;
   const subModeLabel =
     GAME_SUB_MODES(coreMode).modes.find((mode) => mode.value === subMode)
       ?.label ?? subMode;
@@ -390,7 +391,7 @@ function GameBoard() {
               )}
             </div>
           </div>
-          {online?.inviteCode ? (
+          {online?.inviteCode && subMode !== "matchmaking" ? (
             <div className="mt-4 border-t border-white/8 pt-3">
               <InviteCodePanel inviteCode={online?.inviteCode ?? null} />
             </div>
@@ -442,12 +443,16 @@ function GameBoard() {
         {isWaitingForOpponent ? (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-[rgba(11,27,32,0.42)] p-3 backdrop-blur-[2px]">
             <div className="w-full max-w-sm rounded-xl border border-cyan-100/20 bg-[rgba(11,27,32,0.88)] px-5 py-4 text-center shadow-[0_18px_45px_rgba(0,0,0,0.4)]">
-              <p className="font-['Oswald'] text-2xl leading-none text-white">
-                Your board is ready
-              </p>
-              <p className="mt-2 text-sm text-white/65">
-                Share the invite code above to begin.
-              </p>
+        <p className="font-['Oswald'] text-2xl leading-none text-white">
+          {online?.queueing || (subMode === "matchmaking" && online?.waitingForOpponent)
+            ? "Finding an opponent"
+            : "Waiting for your friend"}
+        </p>
+        <p className="mt-2 text-sm text-white/65">
+          {online?.queueing || (subMode === "matchmaking" && online?.waitingForOpponent)
+            ? "You are in the matchmaking queue. Your game will start as soon as an opponent is found."
+            : "Share the invite code above to begin."}
+        </p>
             </div>
           </div>
         ) : null}

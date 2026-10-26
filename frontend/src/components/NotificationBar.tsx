@@ -15,7 +15,7 @@ interface QueuedNotification extends NotificationBarProps {
   id: number;
 }
 
-const DISPLAY_TIME_MS = 4500;
+const DISPLAY_TIME_MS = 5000;
 const MAX_NOTIFICATION_QUEUE_SIZE = 5;
 
 const NOTIFICATION_STYLES = {
@@ -181,7 +181,7 @@ function NotificationBar({
                   <span
                     key={item.id}
                     aria-hidden="true"
-                    className="absolute right-0 bottom-0 left-0 h-px origin-left animate-[notification-progress_4500ms_linear_forwards] bg-white/75"
+                    className="absolute right-0 bottom-0 left-0 h-px origin-left animate-[notification-progress_5000ms_linear_forwards] bg-white/75"
                   />
                 </>
               ) : null}

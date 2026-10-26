@@ -82,21 +82,13 @@ function GameMenu() {
     }
   }
 
-  const [matchmakingNoticeRevision, setMatchmakingNoticeRevision] = useState(0);
-
-  const showMatchmakingNotice = () => {
-    setMatchmakingNoticeRevision((revision) => revision + 1);
-  };
-
   const startGame = () => {
     if (joining) return;
 
-    if (state.subMode === "matchmaking") {
-      showMatchmakingNotice();
-      return;
-    }
-
-    if (state.subMode === "fOnline" && !user) {
+    if (
+      (state.subMode === "fOnline" || state.subMode === "matchmaking") &&
+      !user
+    ) {
       void nav(AppRoutes.auth.path);
       return;
     }
@@ -138,20 +130,12 @@ function GameMenu() {
           onClose={() => setJoinError(null)}
         />
       ) : null}
-      {state.subMode === "matchmaking" ? (
-        <NotificationBar
-          type="info"
-          eventKey={matchmakingNoticeRevision}
-          title="Unavailable Mode"
-          message="Online matchmaking is currently unavailable."
-        />
-      ) : null}
       <MenuHeader title={TEXT.title} />
 
       <MenuSetupPanel />
 
       {state.subMode === "fOnline" ? (
-        <label className="mx-auto flex w-full max-w-md flex-col gap-2 rounded-lg border border-white/12 bg-black/15 px-4 py-3 font-['Montserrat'] text-sm text-white/75 md:mx-0">
+        <label className="mx-auto flex w-full max-w-sm flex-col gap-2 rounded-lg border border-white/12 bg-black/15 px-4 py-3 font-['Montserrat'] text-sm text-white/75 sm:max-w-md md:mx-0 md:max-w-md">
           Join a friend (optional)
           <input
             value={inviteCode}
@@ -168,12 +152,18 @@ function GameMenu() {
             }}
             placeholder="Paste their invite code"
             maxLength={VALID_INVITE_CODE_LENGTH}
-            className="h-10 rounded-md border border-white/15 bg-black/20 px-3 font-mono tracking-widest text-white outline-none focus:border-[hsl(38,95%,62%)]/60 focus:ring-2 focus:ring-[hsl(38,95%,58%)]/25"
+            className="h-10 w-full rounded-md border border-white/15 bg-black/20 px-3 font-mono tracking-widest text-white outline-none focus:border-[hsl(38,95%,62%)]/60 focus:ring-2 focus:ring-[hsl(38,95%,58%)]/25"
           />
         </label>
       ) : null}
 
-      <div className="self-center pb-20 md:self-baseline md:pb-0">
+      <div
+        className={`self-center pb-20 md:self-baseline md:pb-0 ${
+          state.subMode === "matchmaking" || state.subMode === "fOnline"
+            ? "w-full max-w-xs sm:max-w-sm"
+            : ""
+        }`}
+      >
         <NextButton
           text={
             joining

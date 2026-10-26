@@ -13,12 +13,21 @@ type BoardSubModeHook = (
   gameId: string | null,
 ) => BoardHookResult;
 
+function useMatchmakingBoard(
+  config: GameConfig,
+  _inviteCode: string | null,
+  gameId: string | null,
+): BoardHookResult {
+  return useFriendOnlineBoard(config, null, gameId, true);
+}
+
 const BOARD_SUB_MODE_HOOKS: Partial<Record<SubModes, BoardSubModeHook>> = {
   easy: useBotBoard,
   medium: useBotBoard,
   hard: useBotBoard,
   flocal: useFLocalBoard,
   fOnline: useFriendOnlineBoard,
+  matchmaking: useMatchmakingBoard,
 };
 
 function useBoard(): BoardHookResult {
@@ -36,9 +45,11 @@ function useBoard(): BoardHookResult {
   );
 
   const useSubModeBoard =
-    gameId || inviteCode
-      ? useFriendOnlineBoard
-      : BOARD_SUB_MODE_HOOKS[state.subMode];
+    state.subMode === "matchmaking"
+      ? BOARD_SUB_MODE_HOOKS.matchmaking
+      : gameId || inviteCode
+        ? useFriendOnlineBoard
+        : BOARD_SUB_MODE_HOOKS[state.subMode];
 
   if (!useSubModeBoard)
     throw new Error(`Unsupported game submode: ${state.subMode}`);

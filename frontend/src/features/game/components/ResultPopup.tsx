@@ -77,11 +77,7 @@ function GameResultPopup({
 }: GameResultPopupProps) {
   if (!open || winner === null) return null;
 
-  const { Icon, title, tone } = getResultContent(
-    winner,
-    winnerName,
-    resultFor,
-  );
+  const { Icon, title, tone } = getResultContent(winner, winnerName, resultFor);
 
   return (
     <div
@@ -143,7 +139,9 @@ function GameResultPopup({
               }`}
             >
               <RotateCcw className="h-4 w-4" strokeWidth={2.35} />
-              <span>{replayPending ? "Play again requested" : replayLabel}</span>
+              <span>
+                {replayPending ? "Play again requested" : replayLabel}
+              </span>
             </button>
           </div>
         </div>

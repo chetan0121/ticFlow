@@ -36,9 +36,7 @@ function ConfirmationDialog({
       aria-labelledby={id}
     >
       <div className="w-full max-w-95 overflow-hidden rounded-lg border border-white/14 bg-[hsl(26,34%,10%)] shadow-[0_26px_90px_rgba(0,0,0,0.58)]">
-        <div
-          className="relative flex flex-col items-start gap-2 border-b border-amber-100/14 px-5 py-5"
-        >
+        <div className="relative flex flex-col items-start gap-2 border-b border-amber-100/14 px-5 py-5">
           <button
             type="button"
             aria-label="Close"
@@ -82,7 +80,7 @@ function ConfirmationDialog({
             <button
               type="button"
               onClick={onConfirm}
-              className="flex w-full h-11 items-center justify-center gap-2 rounded-md border border-amber-200/35 bg-amber-300/12 px-3 font-['Montserrat'] text-sm font-semibold text-amber-100 transition-colors hover:border-amber-100/55 hover:bg-amber-300/18 focus-visible:ring-2 focus-visible:ring-amber-200/55 focus-visible:outline-none"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-md border border-amber-200/35 bg-amber-300/12 px-3 font-['Montserrat'] text-sm font-semibold text-amber-100 transition-colors hover:border-amber-100/55 hover:bg-amber-300/18 focus-visible:ring-2 focus-visible:ring-amber-200/55 focus-visible:outline-none"
             >
               {confirmIcon}
               {confirmLabel}

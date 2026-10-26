@@ -4,12 +4,17 @@ import {
   createDefaultGameState,
   type FriendGameSnapshot,
   type GameState,
+  type MatchmakingSnapshot,
 } from "@ticflow/shared";
 import { apiBaseUrl, BACKEND_UNAVAILABLE_MESSAGE } from "../../../api/http";
 import type { BoardHookResult, GameConfig } from "../types";
 
 type CommandResponse = { error?: string };
-type GameResponse = CommandResponse & { game?: FriendGameSnapshot };
+type OnlineSnapshot = FriendGameSnapshot | MatchmakingSnapshot;
+type GameResponse = CommandResponse & {
+  game?: OnlineSnapshot;
+  queued?: boolean;
+};
 type ConnectionNotice = {
   type: "info";
   title: string;
@@ -43,8 +48,8 @@ function getLastMove(game: GameState, row: number, column: number): boolean {
 }
 
 function wasRequestedByOpponent(
-  requestedBy: FriendGameSnapshot["drawRequestedBy"],
-  myMark: FriendGameSnapshot["myMark"],
+  requestedBy: OnlineSnapshot["drawRequestedBy"],
+  myMark: OnlineSnapshot["myMark"],
 ): boolean {
   return requestedBy.some((mark) => mark !== myMark);
 }
@@ -53,15 +58,17 @@ export function useFriendOnlineBoard(
   config: GameConfig,
   inviteCode: string | null,
   gameId: string | null,
+  isMatchmaking = false,
 ): BoardHookResult {
-  const [snapshot, setSnapshot] = useState<FriendGameSnapshot | null>(null);
+  const [snapshot, setSnapshot] = useState<OnlineSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorRevision, setErrorRevision] = useState(0);
   const [isUnavailable, setIsUnavailable] = useState(false);
   const [connectionNotice, setConnectionNotice] = useState<
     (ConnectionNotice & { id: number }) | null
   >(null);
-  const snapshotRef = useRef<FriendGameSnapshot | null>(null);
+  const snapshotRef = useRef<OnlineSnapshot | null>(null);
+  const activeGameIdRef = useRef<string | null>(gameId);
   const connectionNoticeRef = useRef<ConnectionNotice | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
@@ -75,22 +82,31 @@ export function useFriendOnlineBoard(
     const loadGame = async () => {
       let response: GameResponse;
       try {
-        response = inviteCode
-          ? await request<GameResponse>(
-              nextSocket,
-              "friend-game:join",
-              inviteCode,
-            )
-          : gameId
+        const activeGameId = activeGameIdRef.current ?? gameId;
+        response = isMatchmaking
+          ? activeGameId
             ? await request<GameResponse>(
                 nextSocket,
-                "friend-game:resume",
-                gameId,
+                "matchmaking:resume",
+                activeGameId,
               )
-            : await request<GameResponse>(nextSocket, "friend-game:create", {
-                timeLimit: config.timeLimit,
-                moveLimit: config.moveLimit,
-              });
+            : await request<GameResponse>(nextSocket, "matchmaking:queue")
+          : inviteCode
+            ? await request<GameResponse>(
+                nextSocket,
+                "friend-game:join",
+                inviteCode,
+              )
+            : gameId
+              ? await request<GameResponse>(
+                  nextSocket,
+                  "friend-game:resume",
+                  gameId,
+                )
+              : await request<GameResponse>(nextSocket, "friend-game:create", {
+                  timeLimit: config.timeLimit,
+                  moveLimit: config.moveLimit,
+                });
       } catch (error) {
         showError(
           error instanceof Error
@@ -105,15 +121,7 @@ export function useFriendOnlineBoard(
         setErrorRevision((revision) => revision + 1);
         setIsUnavailable(true);
       } else if (response.game) {
-        snapshotRef.current = response.game;
-        setSnapshot(response.game);
-        setError(null);
-        setIsUnavailable(false);
-        const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set("game", response.game.id);
-        currentUrl.searchParams.set("code", response.game.inviteCode);
-        currentUrl.searchParams.delete("join");
-        window.history.replaceState({}, "", currentUrl);
+        applySnapshot(response.game, true);
       }
     };
     const showError = (message: string) => {
@@ -121,9 +129,31 @@ export function useFriendOnlineBoard(
       setErrorRevision((revision) => revision + 1);
       setIsUnavailable(true);
     };
+    const applySnapshot = (
+      nextSnapshot: OnlineSnapshot,
+      clearConnectionError = false,
+    ) => {
+      activeGameIdRef.current = nextSnapshot.id;
+      snapshotRef.current = nextSnapshot;
+      setSnapshot(nextSnapshot);
+      if (clearConnectionError) {
+        setError(null);
+        setIsUnavailable(false);
+      }
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set("game", nextSnapshot.id);
+      currentUrl.searchParams.delete("join");
+      if (isMatchmaking) currentUrl.searchParams.delete("code");
+      else
+        currentUrl.searchParams.set(
+          "code",
+          (nextSnapshot as FriendGameSnapshot).inviteCode,
+        );
+      window.history.replaceState({}, "", currentUrl);
+    };
 
     nextSocket.on("connect", () => void loadGame());
-    nextSocket.on("friend-game:state", (nextSnapshot: FriendGameSnapshot) => {
+    const handleState = (nextSnapshot: OnlineSnapshot) => {
       const previousSnapshot = snapshotRef.current;
       const previousOpponentConnected = previousSnapshot
         ? previousSnapshot.players[previousSnapshot.myMark === "O" ? "X" : "O"]
@@ -155,9 +185,21 @@ export function useFriendOnlineBoard(
         setConnectionNotice({ ...notice, id: Date.now() });
       }
 
-      snapshotRef.current = nextSnapshot;
-      setSnapshot(nextSnapshot);
-    });
+      applySnapshot(nextSnapshot);
+    };
+    nextSocket.on(
+      isMatchmaking ? "matchmaking:state" : "friend-game:state",
+      handleState,
+    );
+    if (isMatchmaking) nextSocket.on("matchmaking:matched", handleState);
+    if (isMatchmaking)
+      nextSocket.on("matchmaking:queued", () => {
+        snapshotRef.current = null;
+        setSnapshot(null);
+        setError(null);
+        setIsUnavailable(false);
+        setErrorRevision((revision) => revision + 1);
+      });
     nextSocket.on("friend-game:notice", (notice: ConnectionNotice) => {
       connectionNoticeRef.current = notice;
       setConnectionNotice({ ...notice, id: Date.now() });
@@ -166,14 +208,19 @@ export function useFriendOnlineBoard(
       console.error("[ONLINE_GAME_BACKEND_UNAVAILABLE]", error);
       showError(BACKEND_UNAVAILABLE_MESSAGE);
     });
+    nextSocket.on("matchmaking:error", (response: CommandResponse) =>
+      showError(response.error ?? "Unable to start a match. Please try again."),
+    );
 
     return () => {
+      if (isMatchmaking && !snapshotRef.current)
+        nextSocket.emit("matchmaking:cancel", () => undefined);
       nextSocket.disconnect();
       socketRef.current = null;
       snapshotRef.current = null;
       connectionNoticeRef.current = null;
     };
-  }, [config.moveLimit, config.timeLimit, gameId, inviteCode]);
+  }, [config.moveLimit, config.timeLimit, gameId, inviteCode, isMatchmaking]);
 
   const leave = useCallback(() => {
     const socket = socketRef.current;
@@ -186,6 +233,8 @@ export function useFriendOnlineBoard(
     connectionNoticeRef.current = null;
     setConnectionNotice(null);
   }, []);
+
+  const dismissError = useCallback(() => setError(null), []);
 
   useEffect(() => {
     const handleLeaveRequest = () => leave();
@@ -242,10 +291,23 @@ export function useFriendOnlineBoard(
   const replay = useCallback(() => {
     const socket = socketRef.current;
     if (!socket || !snapshot) return;
-    void request<CommandResponse>(socket, "friend-game:rematch", snapshot.id)
+    void request<CommandResponse & { queued?: boolean }>(
+      socket,
+      "friend-game:rematch",
+      snapshot.id,
+    )
       .then((response) => {
         if (response.error) {
           setError(response.error);
+          setErrorRevision((revision) => revision + 1);
+          return;
+        }
+        if (isMatchmaking && response.queued) {
+          // Opponent left; re-queue the remaining player for a new match.
+          snapshotRef.current = null;
+          setSnapshot(null);
+          setError(null);
+          setIsUnavailable(false);
           setErrorRevision((revision) => revision + 1);
         }
       })
@@ -255,7 +317,7 @@ export function useFriendOnlineBoard(
         );
         setErrorRevision((revision) => revision + 1);
       });
-  }, [snapshot]);
+  }, [isMatchmaking, snapshot]);
 
   const requestDraw = useCallback(() => {
     const socket = socketRef.current;
@@ -295,13 +357,16 @@ export function useFriendOnlineBoard(
         error,
         errorRevision,
         isUnavailable,
-        inviteCode: snapshot?.inviteCode ?? null,
+        inviteCode:
+          snapshot && "inviteCode" in snapshot ? snapshot.inviteCode : null,
         myMark,
         myName,
         opponentName,
         opponentConnected,
         connectionNotice,
-        waitingForOpponent: game.status === "waiting",
+        waitingForOpponent:
+          game.status === "waiting" || (isMatchmaking && !snapshot),
+        queueing: isMatchmaking && !snapshot,
         drawRequested:
           snapshot?.drawRequestedBy.includes(myMark ?? "O") ?? false,
         opponentDrawRequested:
@@ -316,13 +381,14 @@ export function useFriendOnlineBoard(
         leave,
         dismissConnectionNotice,
         requestDraw,
-        dismissError: () => setError(null),
+        dismissError,
       },
     }),
     [
       config.timeLimit,
       connectionNotice,
       dismissConnectionNotice,
+      dismissError,
       error,
       errorRevision,
       isUnavailable,
@@ -335,6 +401,7 @@ export function useFriendOnlineBoard(
       replay,
       requestDraw,
       leave,
+      isMatchmaking,
       snapshot,
     ],
   );
