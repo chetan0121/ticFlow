@@ -1,19 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
-import { io } from "socket.io-client";
 import NextButton from "../../components/buttons/NextButton";
 import NotificationBar from "../../components/NotificationBar";
 import MenuHeader from "../../features/menu/components/MenuHeader";
 import MenuSetupPanel from "../../features/menu/components/MenuSetup";
-import {
-  apiBaseUrl,
-  BACKEND_UNAVAILABLE_MESSAGE,
-} from "../../api/http";
-import { useEnterKey } from "../../hooks/useEnterKey";
 import AppRoutes from "../../router/AppRoutes";
 import { useMenuContext } from "../../features/menu/hooks/useMenuContext";
 import { useAuth } from "../../features/auth/hooks/useAuth";
+import { useEnterKey } from "../../hooks/useEnterKey";
 import { VALID_INVITE_CODE_LENGTH } from "@ticflow/shared";
 
 const TEXT = {
@@ -22,15 +17,11 @@ const TEXT = {
     createRoom: "Create room",
     joinRoom: "Join room",
     startGame: "Start Game",
+    findGame: "FIND GAME",
   },
 };
 
 const INVITE_CODE_STORAGE_KEY = "ticflow:friend-online-invite-code";
-
-type JoinResponse = {
-  error?: string;
-  game?: { id: string };
-};
 
 function getJoinErrorTitle(message: string): string {
   if (message === "Unable to check the invite code. Please try again.") {
@@ -91,8 +82,19 @@ function GameMenu() {
     }
   }
 
+  const [matchmakingNoticeRevision, setMatchmakingNoticeRevision] = useState(0);
+
+  const showMatchmakingNotice = () => {
+    setMatchmakingNoticeRevision((revision) => revision + 1);
+  };
+
   const startGame = () => {
     if (joining) return;
+
+    if (state.subMode === "matchmaking") {
+      showMatchmakingNotice();
+      return;
+    }
 
     if (state.subMode === "fOnline" && !user) {
       void nav(AppRoutes.auth.path);
@@ -110,48 +112,16 @@ function GameMenu() {
       }
 
       setJoining(true);
-
-      const socket = io(apiBaseUrl, {
-        withCredentials: true,
-        timeout: 10000,
-      });
-      const finish = () => {
-        socket.disconnect();
+      window.setTimeout(() => {
         setJoining(false);
-      };
-
-      socket.on("connect", () => {
-        socket.emit("friend-game:join", code, (response: JoinResponse) => {
-          if (response.error) {
-            finish();
-            showJoinError(response.error);
-            return;
-          }
-
-          if (!response.game) {
-            finish();
-            showJoinError("The game could not be loaded. Please try again.");
-            return;
-          }
-
-          finish();
-          void nav(
-            `${AppRoutes.gameBoard.path}?game=${encodeURIComponent(response.game.id)}&code=${encodeURIComponent(code)}`,
-          );
-        });
-      });
-      socket.on("connect_error", (error) => {
-        finish();
-        console.error("[ONLINE_JOIN_BACKEND_UNAVAILABLE]", error);
-        showJoinError(BACKEND_UNAVAILABLE_MESSAGE);
-      });
+        void nav(
+          `${AppRoutes.gameBoard.path}?code=${encodeURIComponent(code)}`,
+        );
+      }, 300);
       return;
     }
 
-    const destination =
-      state.subMode === "fOnline" && code
-        ? `${AppRoutes.gameBoard.path}?join=${encodeURIComponent(code)}`
-        : AppRoutes.gameBoard.path;
+    const destination = AppRoutes.gameBoard.path;
     void nav(destination);
   };
 
@@ -171,6 +141,7 @@ function GameMenu() {
       {state.subMode === "matchmaking" ? (
         <NotificationBar
           type="info"
+          eventKey={matchmakingNoticeRevision}
           title="Unavailable Mode"
           message="Online matchmaking is currently unavailable."
         />
@@ -207,11 +178,13 @@ function GameMenu() {
           text={
             joining
               ? "Checking code..."
-              : state.subMode === "fOnline"
-                ? inviteCode.trim()
-                  ? TEXT.buttons.joinRoom
-                  : TEXT.buttons.createRoom
-                : TEXT.buttons.startGame
+              : state.subMode === "matchmaking"
+                ? TEXT.buttons.findGame
+                : state.subMode === "fOnline"
+                  ? inviteCode.trim()
+                    ? TEXT.buttons.joinRoom
+                    : TEXT.buttons.createRoom
+                  : TEXT.buttons.startGame
           }
           onClick={startGame}
         />

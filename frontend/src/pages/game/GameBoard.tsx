@@ -43,7 +43,13 @@ function PlayerBadge({
 
   return (
     <div
-      className={`relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-lg border px-3 py-2.5 transition-all duration-300 ${turnCue ? "animate-[your-turn-card_1.8s_ease-in-out_infinite]" : ""} ${stateClass}`}
+      className={`relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-lg border px-3 py-2.5 transition-all duration-300 ${
+        turnCue
+          ? mark === "O"
+            ? "animate-[your-turn-card_1.8s_ease-in-out_infinite]"
+            : "animate-[your-turn-card-red_1.8s_ease-in-out_infinite]"
+          : ""
+      } ${stateClass}`}
     >
       <span
         className={`absolute inset-y-2 left-0 w-1 rounded-r-full transition-opacity ${
@@ -56,11 +62,16 @@ function PlayerBadge({
           {label}
         </span>
       </span>
-      {turnCue ? (
-        <span className="animate-[your-turn-pop_1.8s_ease-out_infinite] rounded-full bg-current/15 px-2 py-1 font-['Montserrat'] text-[8px] font-black tracking-[0.12em] text-current uppercase">
-          Your turn
-        </span>
-      ) : null}
+      <span
+        aria-hidden={!turnCue}
+        className={`rounded-full bg-current/15 px-2 py-1 font-['Montserrat'] text-[8px] font-black tracking-[0.12em] text-current uppercase ${
+          turnCue
+            ? "animate-[your-turn-pop_1.8s_ease-out_infinite]"
+            : "opacity-0"
+        }`}
+      >
+        Your turn
+      </span>
     </div>
   );
 }
@@ -108,8 +119,8 @@ function GameBoard() {
   } = useMenuContext();
 
   const coreModeLabel =
-    GAME_MODES().modes.find((mode) => mode.value === coreMode)?.label ??
-    coreMode;
+    GAME_MODES().modes.find((mode) => mode.value === coreMode)?.label
+      ?.toUpperCase() ?? coreMode;
   const subModeLabel =
     GAME_SUB_MODES(coreMode).modes.find((mode) => mode.value === subMode)
       ?.label ?? subMode;
@@ -162,6 +173,7 @@ function GameBoard() {
   }
 
   function leaveToMenu() {
+    online?.leave();
     if (!online) clearLocalGameState(subMode);
     setShowLeaveConfirm(false);
     void navigate(AppRoutes.gameMenu.path);
@@ -210,13 +222,13 @@ function GameBoard() {
   const isCurrentUser = (mark: PlayerMark) =>
     coreMode === "bot" ? mark === "O" : online?.myMark === mark;
   const botMatchupTitle =
-    coreMode === "bot" ? `${subModeLabel} BOT VS YOU` : subModeLabel;
+    coreMode === "bot" ? subModeLabel.toUpperCase() : subModeLabel;
   const matchup =
     coreMode === "bot"
-      ? `${subModeLabel} BOT VS YOU`
+      ? `YOU vs ${subModeLabel} Bot`
       : online?.myMark
-        ? `${online.myName ?? "YOU"} VS ${online.opponentName ?? "OPPONENT"}`
-        : "PLAYER 1 VS PLAYER 2";
+        ? `${online.myName ?? "YOU"} vs ${online.opponentName ?? "Opponent"}`
+        : "Player 1 vs Player 2";
   const winnerName =
     winner !== null && winner !== "draw"
       ? coreMode === "bot"
@@ -236,11 +248,11 @@ function GameBoard() {
         title: getOnlineErrorTitle(online.error),
         message: online.error,
       }
-    : online?.opponentConnected === false
+    : online?.connectionNotice
       ? {
           type: "info" as const,
-          title: "Opponent disconnected",
-          message: "Waiting for them to reconnect.",
+          title: online.connectionNotice.title,
+          message: online.connectionNotice.message,
         }
       : online?.opponentDrawRequested
         ? {
@@ -268,6 +280,7 @@ function GameBoard() {
           disabled: status !== "playing",
           pending: online.drawRequested,
           opponentRequested: online.opponentDrawRequested,
+          attentionAnimation: "animate-[agreement-glow_10s_ease-in-out]",
           onClick: online.requestDraw,
         }
       : {
@@ -306,7 +319,13 @@ function GameBoard() {
         <NotificationBar
           {...notification}
           eventKey={online?.errorRevision}
-          onClose={online?.isUnavailable ? undefined : online?.dismissError}
+          onClose={
+            online?.isUnavailable
+              ? undefined
+              : online?.connectionNotice
+                ? online.dismissConnectionNotice
+                : online?.dismissError
+          }
         />
       ) : null}
       <div
@@ -471,9 +490,22 @@ function GameBoard() {
         open={showResultPopup}
         winner={winner}
         winnerName={winnerName}
+        resultFor={
+          winner !== null && winner !== "draw"
+            ? coreMode === "bot"
+              ? winner === "O"
+                ? "winner"
+                : "loser"
+              : online?.myMark
+                ? winner === online.myMark
+                  ? "winner"
+                  : "loser"
+                : undefined
+            : undefined
+        }
         matchup={matchup}
-        backLabel={online ? "Leave" : "Back"}
-        replayLabel={online ? "Restart" : "Replay"}
+        backLabel="Menu"
+        replayLabel="Play again"
         replayPending={online?.restartRequested ?? false}
         replayAttention={online?.opponentRestartRequested ?? false}
       />
