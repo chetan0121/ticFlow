@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import {
+  cloneGameState,
   createDefaultGameState,
+  GameEngine,
   type FriendGameSnapshot,
   type GameState,
   type MatchmakingSnapshot,
@@ -67,10 +69,12 @@ export function useFriendOnlineBoard(
   const [connectionNotice, setConnectionNotice] = useState<
     (ConnectionNotice & { id: number }) | null
   >(null);
+  const [optimisticGame, setOptimisticGame] = useState<GameState | null>(null);
   const snapshotRef = useRef<OnlineSnapshot | null>(null);
   const activeGameIdRef = useRef<string | null>(gameId);
   const connectionNoticeRef = useRef<ConnectionNotice | null>(null);
   const socketRef = useRef<Socket | null>(null);
+  const pendingMoveRef = useRef<{ row: number; column: number } | null>(null);
 
   useEffect(() => {
     const nextSocket = io(apiBaseUrl, {
@@ -140,6 +144,9 @@ export function useFriendOnlineBoard(
         setError(null);
         setIsUnavailable(false);
       }
+      // Clear optimistic state when we get server confirmation
+      setOptimisticGame(null);
+      pendingMoveRef.current = null;
       const currentUrl = new URL(window.location.href);
       currentUrl.searchParams.set("game", nextSnapshot.id);
       currentUrl.searchParams.delete("join");
@@ -246,7 +253,7 @@ export function useFriendOnlineBoard(
       );
   }, [leave]);
 
-  const game = snapshot?.game ?? createDefaultGameState();
+  const game = optimisticGame ?? snapshot?.game ?? createDefaultGameState();
   const opponentMark = snapshot?.myMark === "O" ? "X" : "O";
   const myName = snapshot?.players[snapshot?.myMark ?? "O"]?.username ?? null;
   const opponentName = snapshot?.players[opponentMark]?.username ?? null;
@@ -267,6 +274,18 @@ export function useFriendOnlineBoard(
         return;
       }
 
+      // Apply move optimistically for instant UI feedback
+      const currentGame = optimisticGame ?? snapshot.game;
+      const optimisticState = GameEngine.nextMove(
+        cloneGameState(currentGame),
+        [row, column],
+        config,
+      );
+      if (optimisticState) {
+        setOptimisticGame(optimisticState);
+        pendingMoveRef.current = { row, column };
+      }
+
       void request<CommandResponse>(socket, "friend-game:move", {
         gameId: snapshot.id,
         row,
@@ -274,18 +293,25 @@ export function useFriendOnlineBoard(
       })
         .then((response) => {
           if (response.error) {
+            // Revert optimistic move on error
+            setOptimisticGame(null);
+            pendingMoveRef.current = null;
             setError(response.error);
             setErrorRevision((revision) => revision + 1);
           }
+          // On success, server will send state update which clears optimistic state
         })
         .catch((error) => {
+          // Revert optimistic move on error
+          setOptimisticGame(null);
+          pendingMoveRef.current = null;
           setError(
             error instanceof Error ? error.message : "Move request failed.",
           );
           setErrorRevision((revision) => revision + 1);
         });
     },
-    [snapshot],
+    [snapshot, optimisticGame, config],
   );
 
   const replay = useCallback(() => {
