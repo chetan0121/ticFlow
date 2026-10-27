@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Circle, Handshake, Pause, Play, RotateCcw, X } from "lucide-react";
+import {
+  Check,
+  Circle,
+  Copy,
+  Handshake,
+  Pause,
+  Play,
+  RotateCcw,
+  X,
+} from "lucide-react";
 import BoardGrid from "../../features/game/components/Grid";
 import ConfirmationDialog from "../../features/game/components/ConfirmationDialog";
-import InviteCodePanel from "../../features/game/components/InviteCodePanel";
 import LeaveGameConfirm from "../../features/game/components/LeaveGameConfirm";
 import MutualActionButton from "../../features/game/components/MutualActionButton";
 import GameResultPopup from "../../features/game/components/ResultPopup";
@@ -112,6 +120,7 @@ function GameBoard() {
   const [showResultPopup, setShowResultPopup] = useState(false);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
   const [, setGameActive] = useGameActive();
   const navigate = useNavigate();
   const {
@@ -133,6 +142,12 @@ function GameBoard() {
       requestAnimationFrame(() => setShowResultPopup(true));
     }
   }, [status, winner]);
+
+  useEffect(() => {
+    if (!inviteCopied) return;
+    const timeout = window.setTimeout(() => setInviteCopied(false), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [inviteCopied]);
 
   const shouldConfirmLeave =
     (status === "playing" || status === "paused") && winner === null;
@@ -200,6 +215,47 @@ function GameBoard() {
       pause();
     } else if (status === "paused") {
       resume();
+    }
+  }
+
+  async function handleCopyInviteCode() {
+    if (!online?.inviteCode) return;
+    try {
+      await copyText(online.inviteCode);
+      setInviteCopied(true);
+    } catch {
+      // Copy failed silently; clipboard may be blocked.
+    }
+  }
+
+  async function copyText(text: string): Promise<void> {
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return;
+      } catch {
+        // Fall back for browsers that expose Clipboard API without allowing it.
+      }
+    }
+
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.setAttribute("readonly", "");
+    textArea.style.position = "fixed";
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.opacity = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    textArea.setSelectionRange(0, textArea.value.length);
+
+    try {
+      if (!document.execCommand("copy")) {
+        throw new Error("The browser rejected the copy request");
+      }
+    } finally {
+      document.body.removeChild(textArea);
     }
   }
 
@@ -344,7 +400,41 @@ function GameBoard() {
                 {botMatchupTitle}
               </h1>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-start gap-2">
+              {online?.inviteCode && subMode !== "matchmaking" ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleCopyInviteCode();
+                  }}
+                  className="flex flex-col items-start gap-1 rounded-lg border border-white/15 bg-black/20 px-3 py-2 font-mono tracking-widest text-white transition-colors hover:border-amber-200/45 hover:bg-amber-200/10 hover:text-amber-100 focus-visible:ring-2 focus-visible:ring-amber-200/45 focus-visible:outline-none"
+                  aria-label="Copy invite code"
+                >
+                  <div className="flex flex-col items-start gap-0.5">
+                    <span className="font-['Montserrat'] text-[10px] font-bold text-white/75">
+                      Invite code:
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="font-['Oswald'] text-base font-semibold tracking-[0.14em] text-white">
+                        {online.inviteCode}
+                      </span>
+                      {inviteCopied ? (
+                        <Check
+                          className="h-3.5 w-3.5 text-emerald-200"
+                          strokeWidth={2.5}
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <Copy
+                          className="h-3.5 w-3.5 text-white/70"
+                          strokeWidth={2.2}
+                          aria-hidden="true"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ) : null}
               {!online ? (
                 <button
                   type="button"
@@ -391,11 +481,6 @@ function GameBoard() {
               )}
             </div>
           </div>
-          {online?.inviteCode && subMode !== "matchmaking" ? (
-            <div className="mt-4 border-t border-white/8 pt-3">
-              <InviteCodePanel inviteCode={online?.inviteCode ?? null} />
-            </div>
-          ) : null}
         </header>
 
         <div className="grid grid-cols-2 items-stretch gap-2 sm:gap-3">
