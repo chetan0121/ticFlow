@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
+import { io, type Socket } from "socket.io-client";
 import NextButton from "../../components/buttons/NextButton";
 import NotificationBar from "../../components/NotificationBar";
 import MenuHeader from "../../features/menu/components/MenuHeader";
 import MenuSetupPanel from "../../features/menu/components/MenuSetup";
+import InviteCodeInput from "../../features/menu/components/InviteCodeInput";
+import { apiBaseUrl } from "../../api/http";
 import AppRoutes from "../../router/AppRoutes";
 import { useMenuContext } from "../../features/menu/hooks/useMenuContext";
 import { useAuth } from "../../features/auth/hooks/useAuth";
@@ -14,10 +17,10 @@ import { VALID_INVITE_CODE_LENGTH } from "@ticflow/shared";
 const TEXT = {
   title: "Game Setup",
   buttons: {
-    createRoom: "Create room",
-    joinRoom: "Join room",
+    createRoom: "Create Room",
+    joinRoom: "Join Room",
     startGame: "Start Game",
-    findGame: "FIND GAME",
+    findGame: "Find Game",
   },
 };
 
@@ -65,6 +68,12 @@ function GameMenu() {
     setJoinErrorRevision((revision) => revision + 1);
   };
 
+  const handleClose = useCallback(() => {
+    setTimeout(() => {
+      setJoinError(null);
+    }, 0);
+  }, [setJoinError]);
+
   useEffect(() => {
     if (!getNavigationNotification(location.state)) return;
     void nav(location.pathname, { replace: true, state: null });
@@ -82,7 +91,7 @@ function GameMenu() {
     }
   }
 
-  const startGame = () => {
+  const startGame = async () => {
     if (joining) return;
 
     if (
@@ -104,12 +113,54 @@ function GameMenu() {
       }
 
       setJoining(true);
-      window.setTimeout(() => {
-        setJoining(false);
+
+      let socket: Socket | null = null;
+      try {
+        socket = io(apiBaseUrl, {
+          withCredentials: true,
+          timeout: 10000,
+        });
+
+        const response = await new Promise<{ error?: string; game?: unknown }>(
+          (resolve, reject) => {
+            const timer = setTimeout(() => {
+              socket?.disconnect();
+              reject(new Error("Request timeout"));
+            }, 10000);
+
+            socket!.emit(
+              "friend-game:join",
+              code,
+              (response: { error?: string; game?: unknown }) => {
+                clearTimeout(timer);
+                socket?.disconnect();
+                resolve(response);
+              },
+            );
+          },
+        );
+
+        if (response.error) {
+          showJoinError(response.error);
+          setJoining(false);
+          return;
+        }
+
         void nav(
           `${AppRoutes.gameBoard.path}?code=${encodeURIComponent(code)}`,
         );
-      }, 300);
+      } catch (error) {
+        setJoining(false);
+        socket?.disconnect();
+        showJoinError(
+          error instanceof Error
+            ? error.message
+            : "Failed to validate invite code. Please try again.",
+        );
+        return;
+      }
+
+      setJoining(false);
       return;
     }
 
@@ -117,7 +168,9 @@ function GameMenu() {
     void nav(destination);
   };
 
-  useEnterKey(startGame);
+  useEnterKey(() => {
+    void startGame();
+  });
 
   return (
     <div className="flex h-full w-full max-w-6xl flex-col gap-10 py-10">
@@ -127,19 +180,16 @@ function GameMenu() {
           eventKey={joinErrorRevision}
           title={getJoinErrorTitle(joinError)}
           message={joinError}
-          onClose={() => setJoinError(null)}
+          onClose={handleClose}
         />
       ) : null}
       <MenuHeader title={TEXT.title} />
 
-      <MenuSetupPanel />
-
-      {state.subMode === "fOnline" ? (
-        <label className="mx-auto flex w-full max-w-sm flex-col gap-2 rounded-lg border border-white/12 bg-black/15 px-4 py-3 font-['Montserrat'] text-sm text-white/75 sm:max-w-md md:mx-0 md:max-w-md">
-          Join a friend (optional)
-          <input
+      <MenuSetupPanel>
+        {state.subMode === "fOnline" ? (
+          <InviteCodeInput
             value={inviteCode}
-            onChange={(event) => updateInviteCode(event.target.value)}
+            onChange={updateInviteCode}
             onFocus={(event) => {
               if (inviteCode.length === VALID_INVITE_CODE_LENGTH) {
                 event.currentTarget.select();
@@ -148,14 +198,13 @@ function GameMenu() {
             onKeyDown={(event) => {
               if (event.key !== "Enter") return;
               event.preventDefault();
-              startGame();
+              void startGame();
             }}
             placeholder="Paste their invite code"
             maxLength={VALID_INVITE_CODE_LENGTH}
-            className="h-10 w-full rounded-md border border-white/15 bg-black/20 px-3 font-mono tracking-widest text-white outline-none focus:border-[hsl(38,95%,62%)]/60 focus:ring-2 focus:ring-[hsl(38,95%,58%)]/25"
           />
-        </label>
-      ) : null}
+        ) : null}
+      </MenuSetupPanel>
 
       <div
         className={`self-center pb-20 md:self-baseline md:pb-0 ${
@@ -176,7 +225,9 @@ function GameMenu() {
                     : TEXT.buttons.createRoom
                   : TEXT.buttons.startGame
           }
-          onClick={startGame}
+          onClick={() => {
+            void startGame();
+          }}
         />
       </div>
     </div>
