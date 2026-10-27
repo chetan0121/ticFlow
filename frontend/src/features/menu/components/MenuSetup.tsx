@@ -1,9 +1,14 @@
+import type { ReactNode } from "react";
 import MenuDropdown from "./Dropdown";
 import RangeStepper from "./RangeStepper";
 import { useGameSetupOptions } from "../hooks/useGameSetupOptions";
 import GameMenuGrid from "./MenuSetupGrid";
 
-function MenuSetupPanel() {
+interface MenuSetupPanelProps {
+  children?: ReactNode;
+}
+
+function MenuSetupPanel({ children }: MenuSetupPanelProps) {
   const setupOptions = useGameSetupOptions();
 
   return (
@@ -17,6 +22,7 @@ function MenuSetupPanel() {
 
         return null;
       })}
+      {children}
     </GameMenuGrid>
   );
 }

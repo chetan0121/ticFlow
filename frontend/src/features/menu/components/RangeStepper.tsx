@@ -120,7 +120,7 @@ function RangeStepper({ range, text }: RangeOptions) {
         <div className="relative flex-3">
           <input
             type="text"
-            value={inputValue ?? "Infinite"}
+            value={inputValue ?? "Unlimited"}
             min={min}
             max={max}
             onChange={(event) => setInputValue(event.target.value)}
