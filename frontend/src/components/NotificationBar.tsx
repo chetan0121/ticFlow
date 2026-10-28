@@ -11,12 +11,14 @@ interface NotificationBarProps {
   eventKey?: string | number | undefined;
 }
 
-interface QueuedNotification extends NotificationBarProps {
+interface StackedNotification extends NotificationBarProps {
   id: number;
+  totalMs: number;
+  remainingMs: number;
 }
 
 const DISPLAY_TIME_MS = 5000;
-const MAX_NOTIFICATION_QUEUE_SIZE = 5;
+const MAX_STACK_SIZE = 5;
 
 const NOTIFICATION_STYLES = {
   error: {
@@ -47,71 +49,112 @@ function NotificationBar({
   eventKey,
 }: NotificationBarProps) {
   const notificationSequence = useRef(0);
-  const [queue, setQueue] = useState<QueuedNotification[]>([]);
-  const timeoutRef = useRef<number | null>(null);
-  const currentRef = useRef<QueuedNotification | undefined>(undefined);
+  const [stack, setStack] = useState<StackedNotification[]>([]);
+  const startTimeRef = useRef<number | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const lastIncomingRef = useRef<{
+    type: NotificationType;
+    title: string;
+    message?: string | undefined;
+    eventKey?: string | number | undefined;
+  } | null>(null);
 
-  const current = queue[0];
-
-  useEffect(() => {
-    currentRef.current = current;
-  }, [current]);
+  const current = stack[0];
 
   const dismissCurrent = useCallback(() => {
-    if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
 
-    setQueue((currentQueue) => {
-      const nextQueue = currentQueue.slice(1);
-      if (nextQueue.length === 0) {
-        currentRef.current?.onClose?.();
+    setStack((currentStack) => {
+      const dismissed = currentStack[0];
+      if (!dismissed) return currentStack;
+
+      const rest = currentStack.slice(1);
+      if (rest.length === 0) {
+        dismissed.onClose?.();
       }
-      return nextQueue;
+      return rest;
     });
-  }, [setQueue]);
+  }, []);
 
   useEffect(() => {
-    if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current);
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
 
-    if (!current) return;
+    if (!current) {
+      startTimeRef.current = null;
+      return;
+    }
 
-    timeoutRef.current = window.setTimeout(dismissCurrent, DISPLAY_TIME_MS);
+    startTimeRef.current = Date.now();
+
+    const timeout = window.setTimeout(
+      dismissCurrent,
+      Math.max(50, current.remainingMs),
+    );
+    timerRef.current = timeout;
 
     return () => {
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
     };
   }, [current, dismissCurrent]);
 
   useEffect(() => {
-    if (!type || !title) return;
+    if (!type || !title) {
+      lastIncomingRef.current = null;
+      return;
+    }
 
-    const nextNotification: QueuedNotification = {
+    const isDuplicate =
+      lastIncomingRef.current !== null &&
+      lastIncomingRef.current.type === type &&
+      lastIncomingRef.current.title === title &&
+      lastIncomingRef.current.message === message &&
+      lastIncomingRef.current.eventKey === eventKey;
+
+    if (isDuplicate) return;
+
+    lastIncomingRef.current = { type, title, message, eventKey };
+
+    const nextNotification: StackedNotification = {
       type,
       title,
       message,
       onClose,
+      eventKey,
       id: ++notificationSequence.current,
+      totalMs: DISPLAY_TIME_MS,
+      remainingMs: DISPLAY_TIME_MS,
     };
 
-    setQueue((currentQueue) => {
-      const last = currentQueue[currentQueue.length - 1];
-      const isDuplicate =
-        last &&
-        last.type === nextNotification.type &&
-        last.title === nextNotification.title &&
-        last.message === nextNotification.message;
-      if (isDuplicate) return currentQueue;
+    setStack((currentStack) => {
+      const currentTop = currentStack[0];
+      if (!currentTop) {
+        return [nextNotification];
+      }
 
-      return [...currentQueue, nextNotification].slice(
-        -MAX_NOTIFICATION_QUEUE_SIZE,
-      );
+      const elapsed =
+        startTimeRef.current !== null ? Date.now() - startTimeRef.current : 0;
+      const updatedRemainingMs = Math.max(0, currentTop.remainingMs - elapsed);
+
+      const updatedTop: StackedNotification = {
+        ...currentTop,
+        remainingMs: updatedRemainingMs,
+      };
+
+      const nextStack = [
+        nextNotification,
+        updatedTop,
+        ...currentStack.slice(1),
+      ];
+      return nextStack.slice(0, MAX_STACK_SIZE);
     });
   }, [type, title, message, onClose, eventKey]);
 
@@ -125,12 +168,12 @@ function NotificationBar({
       className="fixed top-4 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2"
       role={current.type === "error" ? "alert" : "status"}
     >
-      {queue
+      {stack
         .slice()
         .reverse()
         .map((item) => {
-          const stackIndex = queue.indexOf(item);
-          const isCurrent = item.id === current.id;
+          const stackIndex = stack.indexOf(item);
+          const isCurrent = stackIndex === 0;
           const itemStyle = NOTIFICATION_STYLES[item.type];
           const ItemIcon = itemStyle.Icon;
 
@@ -149,6 +192,8 @@ function NotificationBar({
                       transform: `translateY(${stackIndex * 7}px) scale(${
                         1 - stackIndex * 0.04
                       })`,
+                      transition:
+                        "transform 300ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease",
                     }
               }
             >
@@ -179,9 +224,16 @@ function NotificationBar({
                     <CircleX className="h-4.5 w-4.5" strokeWidth={2} />
                   </button>
                   <span
-                    key={item.id}
+                    key={`${item.id}-${item.remainingMs}`}
                     aria-hidden="true"
-                    className="absolute right-0 bottom-0 left-0 h-px origin-left animate-[notification-progress_5000ms_linear_forwards] bg-white/75"
+                    className="absolute right-0 bottom-0 left-0 h-px origin-left bg-white/75"
+                    style={
+                      {
+                        "--notification-progress-start":
+                          item.remainingMs / item.totalMs,
+                        animation: `notification-progress ${item.remainingMs}ms linear forwards`,
+                      } as React.CSSProperties
+                    }
                   />
                 </>
               ) : null}
