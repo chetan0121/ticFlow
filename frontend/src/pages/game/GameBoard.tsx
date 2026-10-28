@@ -375,7 +375,9 @@ function GameBoard() {
       {notification ? (
         <NotificationBar
           {...notification}
-          eventKey={online?.errorRevision}
+          eventKey={
+            online?.error ? online.errorRevision : online?.connectionNotice?.id
+          }
           onClose={
             online?.isUnavailable
               ? undefined
@@ -401,7 +403,7 @@ function GameBoard() {
               </h1>
             </div>
             <div className="flex shrink-0 items-start gap-2">
-              {online?.inviteCode && subMode !== "matchmaking" ? (
+              {online && subMode !== "matchmaking" ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -415,20 +417,29 @@ function GameBoard() {
                       Invite code:
                     </span>
                     <div className="flex items-center gap-1">
-                      <span className="font-['Oswald'] text-base font-semibold tracking-[0.14em] text-white">
-                        {online.inviteCode}
-                      </span>
-                      {inviteCopied ? (
-                        <Check
-                          className="h-3.5 w-3.5 text-emerald-200"
-                          strokeWidth={2.5}
-                          aria-hidden="true"
-                        />
+                      {online.inviteCode ? (
+                        <>
+                          <span className="font-['Oswald'] text-base font-semibold tracking-[0.14em] text-white">
+                            {online.inviteCode}
+                          </span>
+                          {inviteCopied ? (
+                            <Check
+                              className="h-3.5 w-3.5 text-emerald-200"
+                              strokeWidth={2.5}
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <Copy
+                              className="h-3.5 w-3.5 text-white/70"
+                              strokeWidth={2.2}
+                              aria-hidden="true"
+                            />
+                          )}
+                        </>
                       ) : (
-                        <Copy
-                          className="h-3.5 w-3.5 text-white/70"
-                          strokeWidth={2.2}
-                          aria-hidden="true"
+                        <div
+                          className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                          aria-label="Loading invite code"
                         />
                       )}
                     </div>

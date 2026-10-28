@@ -201,7 +201,7 @@
 
 @keyframes notification-progress {
   from {
-    transform: scaleX(1);
+    transform: scaleX(var(--notification-progress-start, 1));
     opacity: 0.85;
   }
   to {

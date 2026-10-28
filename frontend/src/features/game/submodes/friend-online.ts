@@ -162,26 +162,51 @@ export function useFriendOnlineBoard(
     nextSocket.on("connect", () => void loadGame());
     const handleState = (nextSnapshot: OnlineSnapshot) => {
       const previousSnapshot = snapshotRef.current;
-      const previousOpponentConnected = previousSnapshot
-        ? previousSnapshot.players[previousSnapshot.myMark === "O" ? "X" : "O"]
-            ?.connected
+      const prevMyMark = previousSnapshot?.myMark;
+      const prevOpponentMark = prevMyMark
+        ? prevMyMark === "O"
+          ? "X"
+          : "O"
         : undefined;
-      const nextOpponentConnected =
-        nextSnapshot.players[nextSnapshot.myMark === "O" ? "X" : "O"]
-          ?.connected;
+      const prevOpponent = prevOpponentMark
+        ? previousSnapshot?.players[prevOpponentMark]
+        : undefined;
+      const previousOpponentConnected = prevOpponent?.connected;
 
-      if (previousOpponentConnected === false && nextOpponentConnected) {
+      const nextMyMark = nextSnapshot.myMark;
+      const nextOpponentMark = nextMyMark
+        ? nextMyMark === "O"
+          ? "X"
+          : "O"
+        : undefined;
+      const nextOpponent = nextOpponentMark
+        ? nextSnapshot.players[nextOpponentMark]
+        : undefined;
+      const nextOpponentConnected = nextOpponent?.connected;
+
+      if (!prevOpponent && nextOpponent && nextOpponentConnected) {
+        const notice = {
+          type: "info" as const,
+          title: "Opponent joined",
+          message: `${nextOpponent.username || "Your opponent"} has joined the game.`,
+        };
+        connectionNoticeRef.current = notice;
+        setConnectionNotice({ ...notice, id: Date.now() });
+      } else if (
+        prevOpponent &&
+        previousOpponentConnected === false &&
+        nextOpponentConnected === true
+      ) {
         const notice = {
           type: "info" as const,
           title: "Opponent rejoined",
-          message: "Your opponent has rejoined the game.",
+          message: `${nextOpponent?.username || "Your opponent"} has rejoined the game.`,
         };
         connectionNoticeRef.current = notice;
         setConnectionNotice({ ...notice, id: Date.now() });
       } else if (
         previousOpponentConnected === true &&
-        nextOpponentConnected === false &&
-        connectionNoticeRef.current?.title !== "Opponent left"
+        nextOpponentConnected === false
       ) {
         const notice = {
           type: "info" as const,
