@@ -7,7 +7,6 @@ import {
   LockKeyhole,
   LogIn,
   Mail,
-  Sparkles,
   UserPlus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -75,51 +74,52 @@ function AuthForm() {
       ) : null}
       {success ? <NotificationBar type="success" title={success} /> : null}
       <div className="grid w-full overflow-hidden rounded-2xl border border-white/14 bg-[hsl(24,28%,11%)]/86 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl md:grid-cols-[0.94fr_1.06fr]">
-        <div className="relative hidden min-h-145 overflow-hidden border-r border-white/10 bg-[radial-gradient(circle_at_20%_18%,rgba(251,191,36,0.18),transparent_34%),linear-gradient(145deg,hsl(40,44%,18%),hsl(19,38%,11%))] md:block">
-          <div className="absolute -top-20 -right-18 h-64 w-64 rounded-full bg-amber-300/12 blur-3xl" />
-          <div className="absolute -bottom-24 -left-18 h-72 w-72 rounded-full bg-rose-400/10 blur-3xl" />
-          <div className="absolute inset-8 grid grid-cols-3 grid-rows-3 gap-3 opacity-90">
-            {Array.from({ length: 9 }, (_, index) => (
-              <div
-                key={index}
-                className={`flex items-center justify-center rounded-xl border bg-black/18 text-6xl font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ${
-                  index === 4
-                    ? "border-amber-200/35 bg-amber-300/10 text-amber-100/75"
-                    : "border-white/12 text-white/15"
-                }`}
-              >
-                {index === 0 || index === 8
-                  ? "X"
-                  : index === 4 || index === 6
-                    ? "O"
-                    : ""}
+        <div className="relative hidden min-h-145 overflow-hidden border-r border-white/10 bg-linear-to-b from-[hsl(28,26%,13%)] via-[hsl(24,28%,10%)] to-[hsl(20,32%,8%)] p-8 md:flex md:flex-col md:justify-between lg:p-10">
+          <div className="pointer-events-none absolute -top-24 -left-20 h-72 w-72 rounded-full bg-amber-400/8 blur-3xl" />
+          <div className="pointer-events-none absolute -right-20 -bottom-24 h-72 w-72 rounded-full bg-orange-500/6 blur-3xl" />
+
+          {/* Minimalist preview board */}
+          <div className="relative my-auto flex items-center justify-center py-6">
+            <div className="relative aspect-square w-56 rounded-2xl border border-white/10 bg-black/25 p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.45)] backdrop-blur-md">
+              <div className="grid h-full w-full grid-cols-3 grid-rows-3 gap-2.5">
+                {Array.from({ length: 9 }, (_, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-center justify-center rounded-xl border font-['Oswald'] text-3xl font-bold transition-all ${
+                      index === 0
+                        ? "border-amber-400/35 bg-amber-400/10 text-amber-300 shadow-[0_0_20px_rgba(251,191,36,0.12)]"
+                        : index === 4
+                          ? "border-white/20 bg-white/6 text-white/85 shadow-[0_0_20px_rgba(255,255,255,0.08)]"
+                          : index === 8
+                            ? "border-amber-400/20 bg-amber-400/5 text-amber-300/40"
+                            : "border-white/6 bg-white/2"
+                    }`}
+                  >
+                    {index === 0
+                      ? "X"
+                      : index === 4
+                        ? "O"
+                        : index === 8
+                          ? "X"
+                          : ""}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-[hsl(18,36%,9%)] via-[hsl(18,36%,9%)]/90 to-transparent px-8 pt-36 pb-8">
-            <div className="mb-5 flex items-center gap-2 text-amber-200/80">
-              <Sparkles size={16} />
-              <span className="text-[10px] font-bold tracking-[0.22em] uppercase">
-                Make every move count
-              </span>
             </div>
-            <h1 className="font-['Oswald'] text-6xl leading-none font-semibold tracking-tight text-white">
+          </div>
+
+          {/* Bottom brand info */}
+          <div className="relative z-10 pt-4">
+            <p className="text-[10px] font-bold tracking-[0.25em] text-amber-200/75 uppercase">
+              Make every move count
+            </p>
+            <h1 className="mt-2 font-['Oswald'] text-5xl leading-none font-semibold tracking-tight text-white lg:text-6xl">
               Tic<span className="text-amber-200">Flow</span>
             </h1>
-            <p className="mt-4 max-w-xs text-sm leading-6 text-white/65">
+            <p className="mt-3.5 max-w-xs text-sm leading-6 text-white/60">
               Your board. Your rhythm. Pick up every match exactly where you
               left off.
             </p>
-            <div className="mt-7 flex gap-2">
-              {["Play", "Compete", "Flow"].map((item) => (
-                <span
-                  key={item}
-                  className="rounded-full border border-white/12 bg-white/6 px-3 py-1.5 text-[10px] font-bold tracking-[0.14em] text-white/55 uppercase"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -137,9 +137,6 @@ function AuthForm() {
                   ? "Create your identity and bring it into every match."
                   : "Ready for another round? Your next move is waiting."}
               </p>
-            </div>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200/20 bg-amber-300/10 text-amber-100 shadow-[0_0_24px_rgba(251,191,36,0.12)] sm:hidden">
-              <Sparkles size={17} />
             </div>
           </div>
 
