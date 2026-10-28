@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import * as authApi from "../api";
 import type { AuthUser } from "../types";
 import { AuthContext } from "./AuthContext";
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -17,14 +18,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
     authApi
       .getMe()
       .then((response) => {
-        if (isMounted) setUser(response.user);
+        if (!isMounted) return;
+
+        setUser(response.user);
       })
-      .catch(() => {
-        if (isMounted) {
-          setUser(null);
+      .catch((error) => {
+        if (!isMounted) return;
+
+        const err = error as {
+          cause?: { response?: { status?: number } };
+          message?: string;
+        };
+        const cause = err.cause;
+        const isAuthRejected =
+          cause?.response?.status === 401 || cause?.response?.status === 403;
+
+        if (isAuthRejected) {
           document.cookie =
             "ticflow_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        } else {
+          console.error("[AUTH_SESSION_CHECK_BACKEND_UNAVAILABLE]", error);
         }
+
+        setUser(null);
       })
       .finally(() => {
         if (isMounted) setIsLoading(false);
@@ -39,6 +55,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     () => ({
       isLoading,
       user,
+      setUser,
       login: async (identifier: string, password: string) => {
         const response = await authApi.login(identifier, password);
         setUser(response.user);
@@ -52,7 +69,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(null);
       },
     }),
-    [isLoading, user],
+    [isLoading, user, setUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
