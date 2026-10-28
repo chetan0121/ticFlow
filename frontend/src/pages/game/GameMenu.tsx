@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
-import { io, type Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 import NextButton from "../../components/buttons/NextButton";
 import NotificationBar from "../../components/NotificationBar";
 import MenuHeader from "../../features/menu/components/MenuHeader";
 import MenuSetupPanel from "../../features/menu/components/MenuSetup";
 import InviteCodeInput from "../../features/menu/components/InviteCodeInput";
-import { apiBaseUrl } from "../../api/http";
 import AppRoutes from "../../router/AppRoutes";
 import { useMenuContext } from "../../features/menu/hooks/useMenuContext";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useEnterKey } from "../../hooks/useEnterKey";
 import { VALID_INVITE_CODE_LENGTH } from "@ticflow/shared";
+import { apiBaseUrl } from "../../api/http";
 
 const TEXT = {
   title: "Game Setup",
@@ -46,6 +46,31 @@ function getNavigationNotification(state: unknown): string | null {
   return typeof notification === "string" ? notification : null;
 }
 
+function validateInviteCode(code: string): Promise<string | null> {
+  const socket = io(apiBaseUrl, { withCredentials: true, timeout: 10000 });
+
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      socket.disconnect();
+      resolve("Unable to connect to the game server.");
+    }, 10000);
+
+    socket.on("connect", () => {
+      socket.emit("friend-game:join", code, (response: { error?: string }) => {
+        clearTimeout(timer);
+        socket.disconnect();
+        resolve(response.error ?? null);
+      });
+    });
+
+    socket.on("connect_error", () => {
+      clearTimeout(timer);
+      socket.disconnect();
+      resolve("Unable to connect to the game server.");
+    });
+  });
+}
+
 function GameMenu() {
   const nav = useNavigate();
   const location = useLocation();
@@ -61,7 +86,6 @@ function GameMenu() {
   const [joinErrorRevision, setJoinErrorRevision] = useState(() =>
     getNavigationNotification(location.state) ? 1 : 0,
   );
-  const [joining, setJoining] = useState(false);
 
   const showJoinError = (message: string) => {
     setJoinError(message);
@@ -92,8 +116,6 @@ function GameMenu() {
   }
 
   const startGame = async () => {
-    if (joining) return;
-
     if (
       (state.subMode === "fOnline" || state.subMode === "matchmaking") &&
       !user
@@ -112,55 +134,13 @@ function GameMenu() {
         return;
       }
 
-      setJoining(true);
-
-      let socket: Socket | null = null;
-      try {
-        socket = io(apiBaseUrl, {
-          withCredentials: true,
-          timeout: 10000,
-        });
-
-        const response = await new Promise<{ error?: string; game?: unknown }>(
-          (resolve, reject) => {
-            const timer = setTimeout(() => {
-              socket?.disconnect();
-              reject(new Error("Request timeout"));
-            }, 10000);
-
-            socket!.emit(
-              "friend-game:join",
-              code,
-              (response: { error?: string; game?: unknown }) => {
-                clearTimeout(timer);
-                socket?.disconnect();
-                resolve(response);
-              },
-            );
-          },
-        );
-
-        if (response.error) {
-          showJoinError(response.error);
-          setJoining(false);
-          return;
-        }
-
-        void nav(
-          `${AppRoutes.gameBoard.path}?code=${encodeURIComponent(code)}`,
-        );
-      } catch (error) {
-        setJoining(false);
-        socket?.disconnect();
-        showJoinError(
-          error instanceof Error
-            ? error.message
-            : "Failed to validate invite code. Please try again.",
-        );
+      const error = await validateInviteCode(code);
+      if (error) {
+        showJoinError(error);
         return;
       }
 
-      setJoining(false);
+      void nav(`${AppRoutes.gameBoard.path}?code=${encodeURIComponent(code)}`);
       return;
     }
 
@@ -215,15 +195,13 @@ function GameMenu() {
       >
         <NextButton
           text={
-            joining
-              ? "Checking code..."
-              : state.subMode === "matchmaking"
-                ? TEXT.buttons.findGame
-                : state.subMode === "fOnline"
-                  ? inviteCode.trim()
-                    ? TEXT.buttons.joinRoom
-                    : TEXT.buttons.createRoom
-                  : TEXT.buttons.startGame
+            state.subMode === "matchmaking"
+              ? TEXT.buttons.findGame
+              : state.subMode === "fOnline"
+                ? inviteCode.trim()
+                  ? TEXT.buttons.joinRoom
+                  : TEXT.buttons.createRoom
+                : TEXT.buttons.startGame
           }
           onClick={() => {
             void startGame();
