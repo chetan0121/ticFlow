@@ -121,6 +121,7 @@ function GameBoard() {
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
+  const [copyError, setCopyError] = useState<{ message: string } | null>(null);
   const [, setGameActive] = useGameActive();
   const navigate = useNavigate();
   const {
@@ -223,40 +224,18 @@ function GameBoard() {
     try {
       await copyText(online.inviteCode);
       setInviteCopied(true);
+      setCopyError(null);
     } catch {
-      // Copy failed silently; clipboard may be blocked.
+      setInviteCopied(false);
+      setCopyError({ message: "Failed to copy invite code. Please try again." });
     }
   }
 
   async function copyText(text: string): Promise<void> {
-    if (navigator.clipboard?.writeText) {
-      try {
-        await navigator.clipboard.writeText(text);
-        return;
-      } catch {
-        // Fall back for browsers that expose Clipboard API without allowing it.
-      }
+    if (!navigator.clipboard?.writeText) {
+      throw new Error("Clipboard is not available in this browser.");
     }
-
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.setAttribute("readonly", "");
-    textArea.style.position = "fixed";
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.opacity = "0";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    textArea.setSelectionRange(0, textArea.value.length);
-
-    try {
-      if (!document.execCommand("copy")) {
-        throw new Error("The browser rejected the copy request");
-      }
-    } finally {
-      document.body.removeChild(textArea);
-    }
+    await navigator.clipboard.writeText(text);
   }
 
   const isPaused = status === "paused";
@@ -385,6 +364,14 @@ function GameBoard() {
                 ? online.dismissConnectionNotice
                 : online?.dismissError
           }
+        />
+      ) : null}
+      {copyError ? (
+        <NotificationBar
+          type="error"
+          title="Copy failed"
+          message={copyError.message}
+          onClose={() => setCopyError(null)}
         />
       ) : null}
       <div
