@@ -146,6 +146,7 @@ function SidebarPanel({
         description="You will need to log in again to access your account."
         id="logout-confirm-title"
         kicker="Log out"
+        onCancel={() => setShowLogoutConfirm(false)}
         onConfirm={() => void logoutUser()}
         open={showLogoutConfirm}
         title="Log out of TicFlow?"

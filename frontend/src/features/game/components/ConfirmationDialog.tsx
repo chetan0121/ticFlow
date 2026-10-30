@@ -34,14 +34,20 @@ function ConfirmationDialog({
       role="dialog"
       aria-modal="true"
       aria-labelledby={id}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        if (event.target === event.currentTarget) {
+          onCancel?.();
+        }
+      }}
     >
-      <div className="w-full max-w-95 overflow-hidden rounded-lg border border-white/14 bg-[hsl(26,34%,10%)] shadow-[0_26px_90px_rgba(0,0,0,0.58)]">
+      <div className="w-full max-w-95 overflow-hidden rounded-lg border border-white/14 bg-[hsl(26,34%,10%)] shadow-[0_26px_90px_rgba(0,0,0,0.58)]" onPointerDown={(event) => event.stopPropagation()}>
         <div className="relative flex flex-col items-start gap-2 border-b border-amber-100/14 px-5 py-5">
           <button
             type="button"
             aria-label="Close"
             onClick={() => onCancel?.()}
-            className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-md border border-white/10 bg-black/18 text-white/72 transition-colors hover:border-white/22 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-amber-200/45 focus-visible:outline-none"
+            className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-md border border-white/10 bg-amber-400/10 text-amber-300 transition-colors hover:border-amber-300/40 hover:bg-amber-400/25 hover:text-amber-100 focus-visible:ring-2 focus-visible:ring-amber-400/45 focus-visible:outline-none"
           >
             <X className="h-4 w-4" strokeWidth={2.4} />
           </button>
