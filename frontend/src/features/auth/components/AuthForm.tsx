@@ -9,7 +9,7 @@ import {
   Mail,
   UserPlus,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import AppRoutes from "../../../router/AppRoutes";
 import NotificationBar from "../../../components/NotificationBar";
@@ -23,6 +23,7 @@ const modes: { key: AuthMode; label: string }[] = [
 
 function AuthForm() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, signup } = useAuth();
   const [mode, setMode] = useState<AuthMode>("login");
   const [username, setUsername] = useState("");
@@ -34,6 +35,9 @@ function AuthForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   const isSignup = mode === "signup";
+
+  const returnTo =
+    (location.state as { from?: string } | null)?.from ?? AppRoutes.home.path;
 
   const submit = async (event: SubmitEvent) => {
     event.preventDefault();
@@ -50,7 +54,7 @@ function AuthForm() {
       setSuccess(
         isSignup ? "Account created successfully." : "Signed in successfully.",
       );
-      window.setTimeout(() => void navigate(AppRoutes.home.path), 600);
+      window.setTimeout(() => void navigate(returnTo), 600);
     } catch (currentError) {
       setError(
         currentError instanceof Error

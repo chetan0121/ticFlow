@@ -120,7 +120,7 @@ function GameMenu() {
       (state.subMode === "fOnline" || state.subMode === "matchmaking") &&
       !user
     ) {
-      void nav(AppRoutes.auth.path);
+      void nav(AppRoutes.auth.path, { state: { from: location.pathname } });
       return;
     }
 

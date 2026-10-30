@@ -227,7 +227,9 @@ function GameBoard() {
       setCopyError(null);
     } catch {
       setInviteCopied(false);
-      setCopyError({ message: "Failed to copy invite code. Please try again." });
+      setCopyError({
+        message: "Failed to copy invite code. Please try again.",
+      });
     }
   }
 

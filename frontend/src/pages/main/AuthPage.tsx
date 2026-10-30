@@ -1,15 +1,20 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import AppRoutes from "../../router/AppRoutes";
 import AuthForm from "../../features/auth/components/AuthForm";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { getMe } from "../../features/auth/api";
+import LoadingAnimation from "../../components/LoadingAnimation";
 
 function AuthPage() {
   const { setUser } = useAuth();
+  const location = useLocation();
   const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
+
+  const returnTo: string =
+    (location.state as { from?: string } | null)?.from ?? AppRoutes.home.path;
 
   useEffect(() => {
     let cancelled = false;
@@ -18,7 +23,7 @@ function AuthPage() {
       .then((response) => {
         if (!cancelled) {
           setUser(response.user);
-          void navigate(AppRoutes.home.path, { replace: true });
+          void navigate(returnTo);
         }
       })
       .catch(() => {
@@ -31,9 +36,17 @@ function AuthPage() {
     return () => {
       cancelled = true;
     };
-  }, [navigate, setUser]);
+  }, [navigate, setUser, returnTo]);
 
-  if (checking) return null;
+  if (checking) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <LoadingAnimation
+          messages={[{ txt: "Rechecking your session...", keepTime: 0 }]}
+        />
+      </div>
+    );
+  }
 
   return <AuthForm />;
 }
