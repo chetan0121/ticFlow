@@ -41,7 +41,10 @@ function ConfirmationDialog({
         }
       }}
     >
-      <div className="w-full max-w-95 overflow-hidden rounded-lg border border-white/14 bg-[hsl(26,34%,10%)] shadow-[0_26px_90px_rgba(0,0,0,0.58)]" onPointerDown={(event) => event.stopPropagation()}>
+      <div
+        className="w-full max-w-95 overflow-hidden rounded-lg border border-white/14 bg-[hsl(26,34%,10%)] shadow-[0_26px_90px_rgba(0,0,0,0.58)]"
+        onPointerDown={(event) => event.stopPropagation()}
+      >
         <div className="relative flex flex-col items-start gap-2 border-b border-amber-100/14 px-5 py-5">
           <button
             type="button"

@@ -22,6 +22,11 @@ type ConnectionNotice = {
   title: string;
   message: string;
 };
+type PendingMove = {
+  row: number;
+  column: number;
+  mark: GameState["baseGame"]["currentTurn"];
+};
 
 function request<T>(
   socket: Socket,
@@ -74,7 +79,7 @@ export function useFriendOnlineBoard(
   const activeGameIdRef = useRef<string | null>(gameId);
   const connectionNoticeRef = useRef<ConnectionNotice | null>(null);
   const socketRef = useRef<Socket | null>(null);
-  const pendingMoveRef = useRef<{ row: number; column: number } | null>(null);
+  const pendingMoveRef = useRef<PendingMove | null>(null);
 
   useEffect(() => {
     const nextSocket = io(apiBaseUrl, {
@@ -144,9 +149,23 @@ export function useFriendOnlineBoard(
         setError(null);
         setIsUnavailable(false);
       }
-      // Clear optimistic state when we get server confirmation
-      setOptimisticGame(null);
-      pendingMoveRef.current = null;
+
+      // A state event can arrive before the one containing our move (for
+      // example, a queued clock or connection update). Keep the optimistic
+      // board in place until the server has confirmed this exact cell. This
+      // avoids briefly switching the turn/background back to the old state.
+      const pendingMove = pendingMoveRef.current;
+      const moveWasConfirmed =
+        pendingMove !== null &&
+        nextSnapshot.game.baseGame.board[pendingMove.row]?.[
+          pendingMove.column
+        ] === pendingMove.mark;
+
+      if (!pendingMove || moveWasConfirmed) {
+        setOptimisticGame(null);
+        pendingMoveRef.current = null;
+      }
+      
       const currentUrl = new URL(window.location.href);
       currentUrl.searchParams.set("game", nextSnapshot.id);
       currentUrl.searchParams.delete("join");
@@ -287,40 +306,55 @@ export function useFriendOnlineBoard(
   const onCellClick = useCallback(
     (row: number, column: number) => {
       const socket = socketRef.current;
-      if (!socket || !snapshot) return;
-      if (snapshot.game.status !== "playing") {
+      const currentSnapshot = snapshotRef.current;
+      if (!socket || !currentSnapshot) return;
+      if (pendingMoveRef.current) return;
+      if (currentSnapshot.game.status !== "playing") {
         setError("The game has not started yet.");
         setErrorRevision((revision) => revision + 1);
         return;
       }
-      if (snapshot.myMark !== snapshot.game.baseGame.currentTurn) {
+      if (
+        currentSnapshot.myMark !== currentSnapshot.game.baseGame.currentTurn
+      ) {
         setError("It is not your turn yet.");
         setErrorRevision((revision) => revision + 1);
         return;
       }
 
       // Apply move optimistically for instant UI feedback
-      const currentGame = optimisticGame ?? snapshot.game;
+      const currentGame = currentSnapshot.game;
       const optimisticState = GameEngine.nextMove(
         cloneGameState(currentGame),
         [row, column],
         config,
       );
-      if (optimisticState) {
-        setOptimisticGame(optimisticState);
-        pendingMoveRef.current = { row, column };
+      if (!optimisticState) {
+        setError("That move is not allowed.");
+        setErrorRevision((revision) => revision + 1);
+        return;
       }
 
+      setOptimisticGame(optimisticState);
+      const pendingMove: PendingMove = {
+        row,
+        column,
+        mark: currentGame.baseGame.currentTurn,
+      };
+      pendingMoveRef.current = pendingMove;
+
       void request<CommandResponse>(socket, "friend-game:move", {
-        gameId: snapshot.id,
+        gameId: currentSnapshot.id,
         row,
         column,
       })
         .then((response) => {
           if (response.error) {
             // Revert optimistic move on error
-            setOptimisticGame(null);
-            pendingMoveRef.current = null;
+            if (pendingMoveRef.current === pendingMove) {
+              setOptimisticGame(null);
+              pendingMoveRef.current = null;
+            }
             setError(response.error);
             setErrorRevision((revision) => revision + 1);
           }
@@ -328,15 +362,17 @@ export function useFriendOnlineBoard(
         })
         .catch((error) => {
           // Revert optimistic move on error
-          setOptimisticGame(null);
-          pendingMoveRef.current = null;
+          if (pendingMoveRef.current === pendingMove) {
+            setOptimisticGame(null);
+            pendingMoveRef.current = null;
+          }
           setError(
             error instanceof Error ? error.message : "Move request failed.",
           );
           setErrorRevision((revision) => revision + 1);
         });
     },
-    [snapshot, optimisticGame, config],
+    [config],
   );
 
   const replay = useCallback(() => {
