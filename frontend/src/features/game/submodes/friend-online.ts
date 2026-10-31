@@ -28,6 +28,8 @@ type PendingMove = {
   mark: GameState["baseGame"]["currentTurn"];
 };
 
+const CONNECTION_NOTICE_DEBOUNCE_MS = 500;
+
 function request<T>(
   socket: Socket,
   event: string,
@@ -78,6 +80,7 @@ export function useFriendOnlineBoard(
   const snapshotRef = useRef<OnlineSnapshot | null>(null);
   const activeGameIdRef = useRef<string | null>(gameId);
   const connectionNoticeRef = useRef<ConnectionNotice | null>(null);
+  const connectionNoticeTimerRef = useRef<number | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const pendingMoveRef = useRef<PendingMove | null>(null);
 
@@ -165,7 +168,7 @@ export function useFriendOnlineBoard(
         setOptimisticGame(null);
         pendingMoveRef.current = null;
       }
-      
+
       const currentUrl = new URL(window.location.href);
       currentUrl.searchParams.set("game", nextSnapshot.id);
       currentUrl.searchParams.delete("join");
@@ -180,62 +183,8 @@ export function useFriendOnlineBoard(
 
     nextSocket.on("connect", () => void loadGame());
     const handleState = (nextSnapshot: OnlineSnapshot) => {
-      const previousSnapshot = snapshotRef.current;
-      const prevMyMark = previousSnapshot?.myMark;
-      const prevOpponentMark = prevMyMark
-        ? prevMyMark === "O"
-          ? "X"
-          : "O"
-        : undefined;
-      const prevOpponent = prevOpponentMark
-        ? previousSnapshot?.players[prevOpponentMark]
-        : undefined;
-      const previousOpponentConnected = prevOpponent?.connected;
-
-      const nextMyMark = nextSnapshot.myMark;
-      const nextOpponentMark = nextMyMark
-        ? nextMyMark === "O"
-          ? "X"
-          : "O"
-        : undefined;
-      const nextOpponent = nextOpponentMark
-        ? nextSnapshot.players[nextOpponentMark]
-        : undefined;
-      const nextOpponentConnected = nextOpponent?.connected;
-
-      if (!prevOpponent && nextOpponent && nextOpponentConnected) {
-        const notice = {
-          type: "info" as const,
-          title: "Opponent joined",
-          message: `${nextOpponent.username || "Your opponent"} has joined the game.`,
-        };
-        connectionNoticeRef.current = notice;
-        setConnectionNotice({ ...notice, id: Date.now() });
-      } else if (
-        prevOpponent &&
-        previousOpponentConnected === false &&
-        nextOpponentConnected === true
-      ) {
-        const notice = {
-          type: "info" as const,
-          title: "Opponent rejoined",
-          message: `${nextOpponent?.username || "Your opponent"} has rejoined the game.`,
-        };
-        connectionNoticeRef.current = notice;
-        setConnectionNotice({ ...notice, id: Date.now() });
-      } else if (
-        previousOpponentConnected === true &&
-        nextOpponentConnected === false
-      ) {
-        const notice = {
-          type: "info" as const,
-          title: "Opponent disconnected",
-          message: "Waiting for them to reconnect.",
-        };
-        connectionNoticeRef.current = notice;
-        setConnectionNotice({ ...notice, id: Date.now() });
-      }
-
+      // Snapshots are frequent render state. Connection notifications are
+      // emitted separately by the server only for real presence transitions.
       applySnapshot(nextSnapshot);
     };
     nextSocket.on(
@@ -252,8 +201,15 @@ export function useFriendOnlineBoard(
         setErrorRevision((revision) => revision + 1);
       });
     nextSocket.on("friend-game:notice", (notice: ConnectionNotice) => {
-      connectionNoticeRef.current = notice;
-      setConnectionNotice({ ...notice, id: Date.now() });
+      // Socket reconnects can produce a short burst of presence events while
+      // transports settle. Show only the final, stable connection result.
+      if (connectionNoticeTimerRef.current !== null)
+        window.clearTimeout(connectionNoticeTimerRef.current);
+      connectionNoticeTimerRef.current = window.setTimeout(() => {
+        connectionNoticeTimerRef.current = null;
+        connectionNoticeRef.current = notice;
+        setConnectionNotice({ ...notice, id: Date.now() });
+      }, CONNECTION_NOTICE_DEBOUNCE_MS);
     });
     nextSocket.on("connect_error", (error) => {
       console.error("[ONLINE_GAME_BACKEND_UNAVAILABLE]", error);
@@ -270,6 +226,10 @@ export function useFriendOnlineBoard(
       socketRef.current = null;
       snapshotRef.current = null;
       connectionNoticeRef.current = null;
+      if (connectionNoticeTimerRef.current !== null) {
+        window.clearTimeout(connectionNoticeTimerRef.current);
+        connectionNoticeTimerRef.current = null;
+      }
     };
   }, [config.moveLimit, config.timeLimit, gameId, inviteCode, isMatchmaking]);
 
@@ -281,6 +241,10 @@ export function useFriendOnlineBoard(
   }, []);
 
   const dismissConnectionNotice = useCallback(() => {
+    if (connectionNoticeTimerRef.current !== null) {
+      window.clearTimeout(connectionNoticeTimerRef.current);
+      connectionNoticeTimerRef.current = null;
+    }
     connectionNoticeRef.current = null;
     setConnectionNotice(null);
   }, []);

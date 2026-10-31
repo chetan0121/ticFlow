@@ -169,6 +169,20 @@ function sendState(io: Server, room: OnlineModeRoom): void {
   }
 }
 
+function sendOpponentNotice(
+  io: Server,
+  room: OnlineModeRoom,
+  subjectUserId: string,
+  notice: { type: 'info'; title: string; message: string }
+): void {
+  for (const socketId of io.sockets.adapter.rooms.get(roomName(room.id)) ?? []) {
+    const client = io.sockets.sockets.get(socketId)
+    const recipient = client ? usersBySocketId.get(client.id) : undefined
+    if (client && recipient && recipient.id !== subjectUserId)
+      client.emit('friend-game:notice', notice)
+  }
+}
+
 function clearDrawRequestTimer(room: OnlineModeRoom, mark: PlayerMark): void {
   const timer = room.drawRequestTimers.get(mark)
   if (timer) clearTimeout(timer)
@@ -512,11 +526,18 @@ export function attachFriendGameSocket(io: Server): void {
           clearTimeout(room.disconnectTimer)
           room.disconnectTimer = undefined
         }
+        const wasConnected = room.connectedUserIds.has(user.id)
         room.connectedUserIds.add(user.id)
         await joinSocketRoom(socket, room.id)
         await persistRoom(room)
         acknowledge({ game: matchmakingSnapshot(room, user.id) })
         sendState(io, room)
+        if (!wasConnected)
+          sendOpponentNotice(io, room, user.id, {
+            type: 'info',
+            title: 'Opponent rejoined',
+            message: `${user.username} has rejoined the game.`,
+          })
       }
     )
 
@@ -532,11 +553,18 @@ export function attachFriendGameSocket(io: Server): void {
           clearTimeout(room.disconnectTimer)
           room.disconnectTimer = undefined
         }
+        const wasConnected = room.connectedUserIds.has(user.id)
         room.connectedUserIds.add(user.id)
         await joinSocketRoom(socket, room.id)
         await persistRoom(room)
         acknowledge({ game: snapshot(room, user.id) })
         sendState(io, room)
+        if (!wasConnected)
+          sendOpponentNotice(io, room, user.id, {
+            type: 'info',
+            title: 'Opponent rejoined',
+            message: `${user.username} has rejoined the game.`,
+          })
       }
     )
 
@@ -563,11 +591,18 @@ export function attachFriendGameSocket(io: Server): void {
             clearTimeout(room.disconnectTimer)
             room.disconnectTimer = undefined
           }
+          const wasConnected = room.connectedUserIds.has(user.id)
           room.connectedUserIds.add(user.id)
           await joinSocketRoom(socket, room.id)
           await persistRoom(room)
           acknowledge({ game: snapshot(room, user.id) })
           sendState(io, room)
+          if (!wasConnected)
+            sendOpponentNotice(io, room, user.id, {
+              type: 'info',
+              title: 'Opponent rejoined',
+              message: `${user.username} has rejoined the game.`,
+            })
           return
         }
         if (room.game.status !== 'waiting' || room.playerIds.X)
@@ -598,6 +633,11 @@ export function attachFriendGameSocket(io: Server): void {
         await persistRoom(room)
         acknowledge({ game: snapshot(room, user.id) })
         sendState(io, room)
+        sendOpponentNotice(io, room, user.id, {
+          type: 'info',
+          title: 'Opponent joined',
+          message: `${user.username} has joined the game.`,
+        })
       }
     )
 
@@ -607,10 +647,16 @@ export function attachFriendGameSocket(io: Server): void {
       const mark = room ? getMark(room, user.id) : null
       if (!room || !mark) return acknowledge?.({ error: 'Game is no longer available' })
 
-      room.connectedUserIds.delete(user.id)
+      const wasConnected = room.connectedUserIds.delete(user.id)
       await socket.leave(roomName(room.id))
       await persistRoom(room)
       sendState(io, room)
+      if (wasConnected)
+        sendOpponentNotice(io, room, user.id, {
+          type: 'info',
+          title: 'Opponent disconnected',
+          message: 'Waiting for them to reconnect.',
+        })
       if (room.connectedUserIds.size === 1) {
         if (room.disconnectTimer) clearTimeout(room.disconnectTimer)
         room.disconnectTimer = setTimeout(() => {
@@ -747,7 +793,8 @@ export function attachFriendGameSocket(io: Server): void {
             return client.connected && connectedUser?.id === user.id
           })
           if (!stillConnected) {
-            room.connectedUserIds.delete(user.id)
+            const wasConnected = room.connectedUserIds.delete(user.id)
+            if (!wasConnected) continue
             if (room.connectedUserIds.size === 0) {
               if (room.disconnectTimer) clearTimeout(room.disconnectTimer)
               room.disconnectTimer = setTimeout(() => {
@@ -823,6 +870,11 @@ export function attachFriendGameSocket(io: Server): void {
                 console.error('Unable to persist disconnected friend game', error)
               })
               sendState(io, room)
+              sendOpponentNotice(io, room, user.id, {
+                type: 'info',
+                title: 'Opponent disconnected',
+                message: 'Waiting for them to reconnect.',
+              })
             }
           }
         }
