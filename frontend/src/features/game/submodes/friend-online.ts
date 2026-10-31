@@ -208,6 +208,10 @@ export function useFriendOnlineBoard(
       connectionNoticeTimerRef.current = window.setTimeout(() => {
         connectionNoticeTimerRef.current = null;
         connectionNoticeRef.current = notice;
+        // GameBoard selects an error before a connection notice. Clear that
+        // transient source so this notice is delivered to NotificationBar
+        // immediately; its existing error cards stay in the bar's queue.
+        setError(null);
         setConnectionNotice({ ...notice, id: Date.now() });
       }, CONNECTION_NOTICE_DEBOUNCE_MS);
     });
